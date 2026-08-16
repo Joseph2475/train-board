@@ -3,8 +3,10 @@
 A live train departure board as a native macOS desktop widget. Amber-on-black, styled like the real thing: time, destination, platform, and expected columns, with delayed and cancelled trains colour-coded. Departed trains drop off the board on the minute.
 
 Supports two networks, switchable in the app:
-- **UK Rail** - National Rail's live departure feed (via the public [Huxley2](https://huxley2.azurewebsites.net) proxy, no API key needed)
+- **UK Rail** - live Darwin-backed departures from [traini.ac](https://traini.ac) (no API key needed), falling back to the public [Huxley2](https://huxley2.azurewebsites.net) proxy
 - **Caltrain** - live predictions from caltrain.com's own feed (no API key needed), with an optional 511.org fallback
+
+UK data is served by traini.ac, built by [Alistair (@alistaiir)](https://x.com/alistaiir) - cheers Ali.
 
 ## Install
 

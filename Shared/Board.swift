@@ -83,8 +83,8 @@ func searchStations(_ query: String) async throws -> [Station] {
 // MARK: - UK (Huxley2, keyless)
 
 private func ukBoard(code: String) async throws -> [Service] {
-    do { return try await huxleyBoard(code: code) }
-    catch { return try await trainiacBoard(code: code) }
+    do { return try await trainiacBoard(code: code) }
+    catch { return try await huxleyBoard(code: code) }
 }
 
 private func huxleyBoard(code: String) async throws -> [Service] {

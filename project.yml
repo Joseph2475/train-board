@@ -24,6 +24,7 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Train Board
+        CFBundleIconFile: AppIcon
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.josephmoylan.trainboard

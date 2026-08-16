@@ -249,7 +249,7 @@ private func caltrainWebBoard(stop: String) async throws -> [Service] {
             // Caltrain GTFS: direction 0 = northbound, 1 = southbound
             let northbound = p.tripUpdate.trip.directionId == 0
             return (date, Service(std: pacificClock.string(from: date), etd: nil,
-                                  platform: northbound ? "NB" : "SB",
+                                  platform: northbound ? "N" : "S",
                                   isCancelled: false,
                                   destination: [.init(locationName: northbound ? "San Francisco" : "San Jose")]))
         }

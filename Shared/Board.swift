@@ -51,7 +51,12 @@ enum Network: String, CaseIterable {
         Network(rawValue: Station.sharedDefaults.string(forKey: "network") ?? "") ?? .ukRail
     }
 
-    static var api511Key: String { Station.sharedDefaults.string(forKey: "api511Key") ?? "" }
+    // ponytail: bundled key is fine at beta scale (511 caps keys at 60 req/hr, so ~4-5 users);
+    // move behind a caching proxy before any wide release
+    static var api511Key: String {
+        let stored = Station.sharedDefaults.string(forKey: "api511Key") ?? ""
+        return stored.isEmpty ? default511Key : stored
+    }
 
     var fallbackStation: Station {
         switch self {

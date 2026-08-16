@@ -31,8 +31,9 @@ struct SettingsPage: View {
             Picker("Network", selection: $networkRaw) {
                 ForEach(Network.allCases, id: \.rawValue) { Text($0.rawValue) }
             }
-            .pickerStyle(.segmented)
+            .pickerStyle(.menu)
             .labelsHidden()
+            .frame(maxWidth: 200)
             .onChange(of: networkRaw) {
                 let fallback = Network.selected.fallbackStation
                 stationCode = fallback.code

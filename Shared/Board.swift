@@ -189,7 +189,65 @@ private struct Journey: Decodable {
     let MonitoredCall: Call?
 }
 
+// caltrain.com's own keyless predictions endpoint (same Swiftly feed their site board uses).
+// Predicted times only, no schedule join; 511 SIRI below stays as fallback.
+private struct CaltrainPredictions: Decodable {
+    struct StopData: Decodable {
+        let predictions: [Prediction]?
+    }
+    struct Prediction: Decodable {
+        let tripUpdate: TripUpdate
+        enum CodingKeys: String, CodingKey { case tripUpdate = "TripUpdate" }
+    }
+    struct TripUpdate: Decodable {
+        struct TripInfo: Decodable {
+            let directionId: Int?
+            enum CodingKeys: String, CodingKey { case directionId = "DirectionId" }
+        }
+        struct StopTime: Decodable {
+            struct Event: Decodable {
+                let time: Int?
+                enum CodingKeys: String, CodingKey { case time = "Time" }
+            }
+            let departure: Event?
+            let arrival: Event?
+            enum CodingKeys: String, CodingKey { case departure = "Departure", arrival = "Arrival" }
+        }
+        let trip: TripInfo
+        let stopTimeUpdate: [StopTime]?
+        enum CodingKeys: String, CodingKey { case trip = "Trip", stopTimeUpdate = "StopTimeUpdate" }
+    }
+    let data: [StopData]?
+}
+
+private func caltrainWebBoard(stop: String) async throws -> [Service] {
+    let url = URL(string: "https://www.caltrain.com/gtfs/stops/\(stop)/predictions")!
+    let (data, response) = try await URLSession.shared.data(from: url)
+    guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
+    let predictions = try JSONDecoder().decode(CaltrainPredictions.self, from: data)
+        .data?.flatMap { $0.predictions ?? [] } ?? []
+    return predictions
+        .compactMap { p -> (Date, Service)? in
+            guard let stopTime = p.tripUpdate.stopTimeUpdate?.first,
+                  let epoch = stopTime.departure?.time ?? stopTime.arrival?.time else { return nil }
+            let date = Date(timeIntervalSince1970: TimeInterval(epoch))
+            guard date > .now.addingTimeInterval(-60) else { return nil }
+            // Caltrain GTFS: direction 0 = northbound, 1 = southbound
+            let destination = p.tripUpdate.trip.directionId == 0 ? "San Francisco" : "San Jose"
+            return (date, Service(std: pacificClock.string(from: date), etd: nil, platform: nil,
+                                  isCancelled: false,
+                                  destination: [.init(locationName: destination)]))
+        }
+        .sorted { $0.0 < $1.0 }
+        .map(\.1)
+}
+
 private func caltrainBoard(stop: String) async throws -> [Service] {
+    do { return try await caltrainWebBoard(stop: stop) }
+    catch { return try await caltrain511Board(stop: stop) }
+}
+
+private func caltrain511Board(stop: String) async throws -> [Service] {
     let data = try await data511("StopMonitoring", "agency=CT&stopcode=\(stop)")
     let visits = try JSONDecoder().decode(SiriResponse.self, from: data)
         .ServiceDelivery.StopMonitoringDelivery?.MonitoredStopVisit ?? []

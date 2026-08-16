@@ -83,10 +83,15 @@ func searchStations(_ query: String) async throws -> [Station] {
 // MARK: - UK (Huxley2, keyless)
 
 private func ukBoard(code: String) async throws -> [Service] {
+    do { return try await huxleyBoard(code: code) }
+    catch { return try await trainiacBoard(code: code) }
+}
+
+private func huxleyBoard(code: String) async throws -> [Service] {
     // ponytail: public Huxley2 demo instance is flaky (intermittent 500s), so retry
     let url = URL(string: "https://huxley2.azurewebsites.net/departures/\(code.lowercased())/10")!
     var lastError: Error = URLError(.unknown)
-    for attempt in 1...3 {
+    for attempt in 1...2 {
         do {
             let (data, response) = try await URLSession.shared.data(from: url)
             guard (response as? HTTPURLResponse)?.statusCode == 200 else {
@@ -95,10 +100,72 @@ private func ukBoard(code: String) async throws -> [Service] {
             return try JSONDecoder().decode(Board.self, from: data).trainServices ?? []
         } catch {
             lastError = error
-            if attempt < 3 { try? await Task.sleep(for: .seconds(2)) }
+            if attempt < 2 { try? await Task.sleep(for: .seconds(2)) }
         }
     }
     throw lastError
+}
+
+// Fallback: traini.ac UK rail MCP server (keyless, Darwin-backed). MCP is JSON-RPC over
+// one POST; the departures payload is JSON inside result.content[0].text.
+private let londonClock: DateFormatter = {
+    let f = DateFormatter()
+    f.dateFormat = "HH:mm"
+    f.timeZone = TimeZone(identifier: "Europe/London")
+    return f
+}()
+
+private func trainiacBoard(code: String) async throws -> [Service] {
+    struct Rpc: Decodable {
+        struct Result_: Decodable {
+            struct Content: Decodable { let text: String }
+            let content: [Content]
+        }
+        let result: Result_
+    }
+    struct DepartureList: Decodable {
+        struct Departure: Decodable {
+            struct Place: Decodable { let name: String }
+            let departs: String
+            let expected_departs: String?
+            let platform: String?
+            let destination: Place
+            let status: String?
+            let not_for_display: Bool?
+            let train_id: String?
+        }
+        let results: [Departure]
+    }
+
+    var request = URLRequest(url: URL(string: "https://api.traini.ac/mcp")!)
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.setValue("application/json, text/event-stream", forHTTPHeaderField: "Accept")
+    request.httpBody = try JSONSerialization.data(withJSONObject: [
+        "jsonrpc": "2.0", "id": 1, "method": "tools/call",
+        "params": ["name": "departures", "arguments": ["station": code]],
+    ])
+    let (data, response) = try await URLSession.shared.data(for: request)
+    guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
+    let text = try JSONDecoder().decode(Rpc.self, from: data).result.content.first?.text ?? ""
+    let iso = ISO8601DateFormatter()
+    var seenTrains = Set<String>()
+    return try JSONDecoder().decode(DepartureList.self, from: Data(text.utf8)).results
+        .filter { $0.not_for_display != true && seenTrains.insert($0.train_id ?? UUID().uuidString).inserted }
+        .compactMap { d -> (Date, Service)? in
+            guard let departs = iso.date(from: d.departs) else { return nil }
+            let cancelled = d.status?.lowercased().contains("cancel") == true
+            var etd = "On time"
+            if let expRaw = d.expected_departs, let expected = iso.date(from: expRaw),
+               expected.timeIntervalSince(departs) > 60 {
+                etd = londonClock.string(from: expected)
+            }
+            return (departs, Service(std: londonClock.string(from: departs), etd: etd,
+                                     platform: d.platform, isCancelled: cancelled,
+                                     destination: [.init(locationName: d.destination.name.capitalized)]))
+        }
+        .sorted { $0.0 < $1.0 }
+        .map(\.1)
 }
 
 private struct CrsResult: Decodable {

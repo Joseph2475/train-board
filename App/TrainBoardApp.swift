@@ -45,10 +45,20 @@ struct SettingsPage: View {
             }
 
             if Network.selected == .caltrain {
-                TextField("511.org API key", text: $api511Key)
-                    .textFieldStyle(.roundedBorder)
-                Link("Get a free key at 511.org", destination: URL(string: "https://511.org/open-data/token")!)
-                    .font(.caption)
+                DisclosureGroup("Backup data source (optional)") {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Live times come straight from caltrain.com, no setup needed. If that feed is ever down, the app falls back to the 511.org API using a shared key. Since the shared key is rate limited, you can add your own free key here to make the backup more reliable.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        TextField("Your 511.org API key", text: $api511Key)
+                            .textFieldStyle(.roundedBorder)
+                        Link("Get a free key at 511.org", destination: URL(string: "https://511.org/open-data/token")!)
+                            .font(.caption)
+                    }
+                    .padding(.top, 4)
+                }
+                .font(.caption)
             }
 
             Text("The widget shows live departures for")

@@ -310,10 +310,10 @@ struct BoardView: View {
         VStack(alignment: .leading, spacing: 4) {
             header
             Divider().overlay(amber.opacity(0.4))
-            if let error = entry.error {
-                message("No data: \(error)")
+            if entry.error != nil {
+                message("No trains available right now")
             } else if entry.services.isEmpty {
-                message("No departures")
+                message("No trains due")
             } else {
                 grid
             }

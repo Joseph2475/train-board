@@ -1,8 +1,10 @@
 # TrainBoard
 
-A live UK train departure board as a native macOS desktop widget. Amber-on-black, styled like the real thing: time, destination, platform, and expected columns, with delayed and cancelled trains colour-coded. Departed trains drop off the board on the minute.
+A live train departure board as a native macOS desktop widget. Amber-on-black, styled like the real thing: time, destination, platform, and expected columns, with delayed and cancelled trains colour-coded. Departed trains drop off the board on the minute.
 
-Data comes from National Rail's live departure feed (via the public [Huxley2](https://huxley2.azurewebsites.net) proxy, no API key needed).
+Supports two networks, switchable in the app:
+- **UK Rail** - National Rail's live departure feed (via the public [Huxley2](https://huxley2.azurewebsites.net) proxy, no API key needed)
+- **Caltrain** - live predictions from caltrain.com's own feed (no API key needed), with an optional 511.org fallback
 
 ## Install
 
@@ -17,7 +19,7 @@ The app window is just settings - the widget runs on its own, app closed or not.
 
 ## Build from source
 
-Needs Xcode and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`):
+Needs Xcode and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`). First copy `Shared/Secrets.example.swift` to `Shared/Secrets.swift` and set a [free 511.org key](https://511.org/open-data/token) (only used as the Caltrain fallback; any placeholder string builds fine). Then:
 
 ```sh
 xcodegen generate

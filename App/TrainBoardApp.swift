@@ -18,6 +18,8 @@ struct TrainBoardApp: App {
 struct SettingsPage: View {
     @AppStorage("stationCode", store: Station.sharedDefaults) var stationCode = Station.fallback.code
     @AppStorage("stationName", store: Station.sharedDefaults) var stationName = Station.fallback.name
+    @AppStorage("network", store: Station.sharedDefaults) var networkRaw = Network.ukRail.rawValue
+    @AppStorage("api511Key", store: Station.sharedDefaults) var api511Key = ""
     @State private var searchText = ""
     @State private var results: [Station] = []
     @State private var pending: Station?
@@ -25,6 +27,29 @@ struct SettingsPage: View {
     var body: some View {
         VStack(spacing: 14) {
             Text("🚆 Train Board").font(.title2.bold())
+
+            Picker("Network", selection: $networkRaw) {
+                ForEach(Network.allCases, id: \.rawValue) { Text($0.rawValue) }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .onChange(of: networkRaw) {
+                let fallback = Network.selected.fallbackStation
+                stationCode = fallback.code
+                stationName = fallback.name
+                searchText = ""
+                results = []
+                pending = nil
+                WidgetCenter.shared.reloadAllTimelines()
+            }
+
+            if Network.selected == .caltrain {
+                TextField("511.org API key", text: $api511Key)
+                    .textFieldStyle(.roundedBorder)
+                Link("Get a free key at 511.org", destination: URL(string: "https://511.org/open-data/token")!)
+                    .font(.caption)
+            }
+
             Text("The widget shows live departures for")
                 .foregroundStyle(.secondary)
             Text(stationName)

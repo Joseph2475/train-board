@@ -30,6 +30,8 @@ struct Provider: TimelineProvider {
     }
 
     private func departed(_ s: Service, by date: Date) -> Bool {
+        // ponytail: board times are local-timezone only for UK; Caltrain shows Pacific times, skip the filter
+        guard Network.selected == .ukRail else { return false }
         // effective departure: etd when it is a clock time, else scheduled std
         let time = (s.etd?.contains(":") == true ? s.etd : s.std) ?? ""
         let parts = time.split(separator: ":").compactMap { Int($0) }

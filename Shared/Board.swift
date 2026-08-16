@@ -41,7 +41,43 @@ struct Service: Decodable {
     var destinationName: String { destination.first?.locationName ?? "?" }
 }
 
+// MARK: - Networks
+
+enum Network: String, CaseIterable {
+    case ukRail = "UK Rail"
+    case caltrain = "Caltrain"
+
+    static var selected: Network {
+        Network(rawValue: Station.sharedDefaults.string(forKey: "network") ?? "") ?? .ukRail
+    }
+
+    static var api511Key: String { Station.sharedDefaults.string(forKey: "api511Key") ?? "" }
+
+    var fallbackStation: Station {
+        switch self {
+        case .ukRail: Station(code: "STD", name: "Stroud")
+        case .caltrain: Station(code: "70011", name: "San Francisco")
+        }
+    }
+}
+
 func fetchBoard(code: String) async throws -> [Service] {
+    switch Network.selected {
+    case .ukRail: try await ukBoard(code: code)
+    case .caltrain: try await caltrainBoard(stop: code)
+    }
+}
+
+func searchStations(_ query: String) async throws -> [Station] {
+    switch Network.selected {
+    case .ukRail: try await ukSearch(query)
+    case .caltrain: try await caltrainSearch(query)
+    }
+}
+
+// MARK: - UK (Huxley2, keyless)
+
+private func ukBoard(code: String) async throws -> [Service] {
     // ponytail: public Huxley2 demo instance is flaky (intermittent 500s), so retry
     let url = URL(string: "https://huxley2.azurewebsites.net/departures/\(code.lowercased())/10")!
     var lastError: Error = URLError(.unknown)
@@ -65,7 +101,7 @@ private struct CrsResult: Decodable {
     let crsCode: String
 }
 
-func searchStations(_ query: String) async throws -> [Station] {
+private func ukSearch(_ query: String) async throws -> [Station] {
     let trimmed = query.trimmingCharacters(in: .whitespaces)
     guard !trimmed.isEmpty,
           let encoded = trimmed.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
@@ -77,6 +113,97 @@ func searchStations(_ query: String) async throws -> [Station] {
     }
     return try JSONDecoder().decode([CrsResult].self, from: data)
         .map { Station(code: $0.crsCode, name: $0.stationName) }
+}
+
+// MARK: - Caltrain (511.org, free API key required)
+
+private let pacificClock: DateFormatter = {
+    let f = DateFormatter()
+    f.dateFormat = "HH:mm"
+    f.timeZone = TimeZone(identifier: "America/Los_Angeles")
+    return f
+}()
+
+private func data511(_ path: String, _ params: String) async throws -> Data {
+    let key = Network.api511Key
+    guard !key.isEmpty else {
+        throw NSError(domain: "TrainBoard", code: 1,
+                      userInfo: [NSLocalizedDescriptionKey: "Add your free 511.org API key in the app"])
+    }
+    let url = URL(string: "https://api.511.org/transit/\(path)?api_key=\(key)&format=json&\(params)")!
+    let (data, response) = try await URLSession.shared.data(from: url)
+    guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
+    // 511 prefixes responses with a UTF-8 BOM that JSONDecoder rejects
+    return data.starts(with: [0xEF, 0xBB, 0xBF]) ? data.dropFirst(3) : data
+}
+
+private struct StopsResponse: Decodable {
+    struct Contents_: Decodable {
+        struct DataObjects: Decodable {
+            struct Stop: Decodable { let id: String; let Name: String }
+            let ScheduledStopPoint: [Stop]
+        }
+        let dataObjects: DataObjects
+    }
+    let Contents: Contents_
+}
+
+private var cachedCaltrainStops: [Station]?
+
+private func caltrainSearch(_ query: String) async throws -> [Station] {
+    let trimmed = query.trimmingCharacters(in: .whitespaces).lowercased()
+    guard !trimmed.isEmpty else { return [] }
+    if cachedCaltrainStops == nil {
+        let data = try await data511("stops", "operator_id=CT")
+        cachedCaltrainStops = try JSONDecoder().decode(StopsResponse.self, from: data)
+            .Contents.dataObjects.ScheduledStopPoint
+            .map { Station(code: $0.id, name: $0.Name) }
+    }
+    return (cachedCaltrainStops ?? []).filter { $0.name.lowercased().contains(trimmed) }
+}
+
+private struct SiriResponse: Decodable {
+    struct Delivery: Decodable {
+        struct StopDelivery: Decodable {
+            struct Visit: Decodable { let MonitoredVehicleJourney: Journey }
+            let MonitoredStopVisit: [Visit]?
+        }
+        let StopMonitoringDelivery: StopDelivery?
+    }
+    let ServiceDelivery: Delivery
+}
+
+private struct Journey: Decodable {
+    struct Call: Decodable {
+        let AimedDepartureTime: String?
+        let ExpectedDepartureTime: String?
+        let AimedArrivalTime: String?
+        let ExpectedArrivalTime: String?
+    }
+    let DestinationName: String?
+    let MonitoredCall: Call?
+}
+
+private func caltrainBoard(stop: String) async throws -> [Service] {
+    let data = try await data511("StopMonitoring", "agency=CT&stopcode=\(stop)")
+    let visits = try JSONDecoder().decode(SiriResponse.self, from: data)
+        .ServiceDelivery.StopMonitoringDelivery?.MonitoredStopVisit ?? []
+    let iso = ISO8601DateFormatter()
+    return visits.compactMap { visit -> Service? in
+        let j = visit.MonitoredVehicleJourney
+        guard let call = j.MonitoredCall,
+              let aimedRaw = call.AimedDepartureTime ?? call.AimedArrivalTime,
+              let aimed = iso.date(from: aimedRaw) else { return nil }
+        var etd = "On time"
+        if let expRaw = call.ExpectedDepartureTime ?? call.ExpectedArrivalTime,
+           let expected = iso.date(from: expRaw), expected.timeIntervalSince(aimed) > 90 {
+            etd = pacificClock.string(from: expected)
+        }
+        return Service(std: pacificClock.string(from: aimed), etd: etd, platform: nil,
+                       isCancelled: false,
+                       destination: [.init(locationName: j.DestinationName ?? "?")])
+    }
+    .sorted { ($0.std ?? "") < ($1.std ?? "") }
 }
 
 // MARK: - Entry + View

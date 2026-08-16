@@ -61,7 +61,7 @@ enum Network: String, CaseIterable {
     var fallbackStation: Station {
         switch self {
         case .ukRail: Station(code: "STD", name: "Stroud")
-        case .caltrain: Station(code: "70012", name: "San Francisco")
+        case .caltrain: Station(code: "san_francisco", name: "San Francisco")
         }
     }
 }
@@ -145,7 +145,12 @@ private func data511(_ path: String, _ params: String) async throws -> Data {
 private struct StopsResponse: Decodable {
     struct Contents_: Decodable {
         struct DataObjects: Decodable {
-            struct Stop: Decodable { let id: String; let Name: String }
+            struct Stop: Decodable {
+                struct Extensions_: Decodable { let ParentStation: String? }
+                let id: String
+                let Name: String
+                let Extensions: Extensions_?
+            }
             let ScheduledStopPoint: [Stop]
         }
         let dataObjects: DataObjects
@@ -160,9 +165,18 @@ private func caltrainSearch(_ query: String) async throws -> [Station] {
     guard !trimmed.isEmpty else { return [] }
     if cachedCaltrainStops == nil {
         let data = try await data511("stops", "operator_id=CT")
+        // one entry per parent station (directional platforms merge; board shows NB/SB in Plat)
+        var seen = Set<String>()
         cachedCaltrainStops = try JSONDecoder().decode(StopsResponse.self, from: data)
             .Contents.dataObjects.ScheduledStopPoint
-            .map { Station(code: $0.id, name: $0.Name.replacingOccurrences(of: " Caltrain Station", with: "")) }
+            .compactMap { stop -> Station? in
+                guard let parent = stop.Extensions?.ParentStation, seen.insert(parent).inserted else { return nil }
+                let name = stop.Name
+                    .replacingOccurrences(of: " Caltrain Station", with: "")
+                    .replacingOccurrences(of: " Northbound", with: "")
+                    .replacingOccurrences(of: " Southbound", with: "")
+                return Station(code: parent, name: name)
+            }
     }
     return (cachedCaltrainStops ?? []).filter { $0.name.lowercased().contains(trimmed) }
 }
@@ -233,10 +247,11 @@ private func caltrainWebBoard(stop: String) async throws -> [Service] {
             let date = Date(timeIntervalSince1970: TimeInterval(epoch))
             guard date > .now.addingTimeInterval(-60) else { return nil }
             // Caltrain GTFS: direction 0 = northbound, 1 = southbound
-            let destination = p.tripUpdate.trip.directionId == 0 ? "San Francisco" : "San Jose"
-            return (date, Service(std: pacificClock.string(from: date), etd: nil, platform: nil,
+            let northbound = p.tripUpdate.trip.directionId == 0
+            return (date, Service(std: pacificClock.string(from: date), etd: nil,
+                                  platform: northbound ? "NB" : "SB",
                                   isCancelled: false,
-                                  destination: [.init(locationName: destination)]))
+                                  destination: [.init(locationName: northbound ? "San Francisco" : "San Jose")]))
         }
         .sorted { $0.0 < $1.0 }
         .map(\.1)
@@ -244,7 +259,11 @@ private func caltrainWebBoard(stop: String) async throws -> [Service] {
 
 private func caltrainBoard(stop: String) async throws -> [Service] {
     do { return try await caltrainWebBoard(stop: stop) }
-    catch { return try await caltrain511Board(stop: stop) }
+    catch {
+        // 511 fallback only understands numeric GTFS stop codes, not parent station slugs
+        guard stop.allSatisfy(\.isNumber) else { throw error }
+        return try await caltrain511Board(stop: stop)
+    }
 }
 
 private func caltrain511Board(stop: String) async throws -> [Service] {

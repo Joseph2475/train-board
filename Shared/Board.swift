@@ -56,7 +56,7 @@ enum Network: String, CaseIterable {
     var fallbackStation: Station {
         switch self {
         case .ukRail: Station(code: "STD", name: "Stroud")
-        case .caltrain: Station(code: "70011", name: "San Francisco")
+        case .caltrain: Station(code: "70012", name: "San Francisco")
         }
     }
 }
@@ -157,7 +157,7 @@ private func caltrainSearch(_ query: String) async throws -> [Station] {
         let data = try await data511("stops", "operator_id=CT")
         cachedCaltrainStops = try JSONDecoder().decode(StopsResponse.self, from: data)
             .Contents.dataObjects.ScheduledStopPoint
-            .map { Station(code: $0.id, name: $0.Name) }
+            .map { Station(code: $0.id, name: $0.Name.replacingOccurrences(of: " Caltrain Station", with: "")) }
     }
     return (cachedCaltrainStops ?? []).filter { $0.name.lowercased().contains(trimmed) }
 }
@@ -201,7 +201,7 @@ private func caltrainBoard(stop: String) async throws -> [Service] {
         }
         return Service(std: pacificClock.string(from: aimed), etd: etd, platform: nil,
                        isCancelled: false,
-                       destination: [.init(locationName: j.DestinationName ?? "?")])
+                       destination: [.init(locationName: (j.DestinationName ?? "?").replacingOccurrences(of: " Caltrain Station", with: ""))])
     }
     .sorted { ($0.std ?? "") < ($1.std ?? "") }
 }

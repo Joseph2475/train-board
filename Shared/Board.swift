@@ -401,7 +401,7 @@ struct BoardView: View {
                 Text(station.name.uppercased())
             }
             Spacer()
-            Text(entry.date, style: .time)
+            Text((Network.selected == .caltrain ? pacificClock : londonClock).string(from: entry.date))
                 .foregroundStyle(amber.opacity(0.6))
         }
         .font(.system(.caption, design: .monospaced).bold())

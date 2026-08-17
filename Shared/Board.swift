@@ -89,7 +89,7 @@ private func ukBoard(code: String) async throws -> [Service] {
 
 private func huxleyBoard(code: String) async throws -> [Service] {
     // ponytail: public Huxley2 demo instance is flaky (intermittent 500s), so retry
-    let url = URL(string: "https://huxley2.azurewebsites.net/departures/\(code.lowercased())/10")!
+    let url = URL(string: "https://huxley2.azurewebsites.net/departures/\(code.lowercased())/15")!
     var lastError: Error = URLError(.unknown)
     for attempt in 1...2 {
         do {
@@ -358,6 +358,7 @@ struct BoardView: View {
     var station: Station
     var network: Network = .ukRail
     var rowLimit: Int = 8
+    var compact: Bool = false
     var onStationTap: (() -> Void)? = nil
 
     private let amber = Color.orange
@@ -402,19 +403,22 @@ struct BoardView: View {
     private var grid: some View {
         HStack(alignment: .top, spacing: 0) {
             column("Time", width: 44, center: false) { s in
-                Text(s.std ?? "--:--").foregroundStyle(amber)
+                // compact: no Expected column, so the time itself carries the status colour
+                Text(s.std ?? "--:--").foregroundStyle(compact ? statusColor(s) : amber)
             }
             columnDivider
             column("Destination", width: nil, center: false) { s in
                 Text(s.destinationName).truncationMode(.tail).foregroundStyle(amber)
             }
-            columnDivider
-            column("Plat", width: 36, center: true) { s in
-                Text(s.platform ?? "-").foregroundStyle(amber.opacity(0.6))
-            }
-            columnDivider
-            column("Expected", width: 72, center: false) { s in
-                Text(statusText(s)).foregroundStyle(statusColor(s))
+            if !compact {
+                columnDivider
+                column("Plat", width: 36, center: true) { s in
+                    Text(s.platform ?? "-").foregroundStyle(amber.opacity(0.6))
+                }
+                columnDivider
+                column("Expected", width: 72, center: false) { s in
+                    Text(statusText(s)).foregroundStyle(statusColor(s))
+                }
             }
         }
     }

@@ -112,15 +112,26 @@ struct Provider: AppIntentTimelineProvider {
 
 // MARK: - Widget
 
+struct WidgetBoard: View {
+    var entry: BoardEntry
+    @Environment(\.widgetFamily) var family
+
+    var body: some View {
+        BoardView(entry: entry, station: entry.station, network: entry.network,
+                  rowLimit: family == .systemLarge ? 13 : (family == .systemSmall ? 5 : 6),
+                  compact: family == .systemSmall)
+            .containerBackground(.black, for: .widget)
+    }
+}
+
 @main
 struct TrainWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "TrainBoard", intent: StationConfigIntent.self, provider: Provider()) { entry in
-            BoardView(entry: entry, station: entry.station, network: entry.network, rowLimit: 6)
-                .containerBackground(.black, for: .widget)
+            WidgetBoard(entry: entry)
         }
         .configurationDisplayName(String("Train Board"))
         .description(String("Live departures for a station of your choice."))
-        .supportedFamilies([.systemMedium])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }

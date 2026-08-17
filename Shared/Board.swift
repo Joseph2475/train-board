@@ -66,15 +66,15 @@ enum Network: String, CaseIterable {
     }
 }
 
-func fetchBoard(code: String) async throws -> [Service] {
-    switch Network.selected {
+func fetchBoard(network: Network = .selected, code: String) async throws -> [Service] {
+    switch network {
     case .ukRail: try await ukBoard(code: code)
     case .caltrain: try await caltrainBoard(stop: code)
     }
 }
 
-func searchStations(_ query: String) async throws -> [Station] {
-    switch Network.selected {
+func searchStations(network: Network = .selected, _ query: String) async throws -> [Station] {
+    switch network {
     case .ukRail: try await ukSearch(query)
     case .caltrain: try await caltrainSearch(query)
     }
@@ -349,11 +349,14 @@ struct BoardEntry: TimelineEntry {
     let date: Date
     let services: [Service]
     let error: String?
+    var station: Station = .fallback
+    var network: Network = .ukRail
 }
 
 struct BoardView: View {
     var entry: BoardEntry
     var station: Station
+    var network: Network = .ukRail
     var rowLimit: Int = 8
     var onStationTap: (() -> Void)? = nil
 
@@ -389,7 +392,7 @@ struct BoardView: View {
                 Text(station.name.uppercased())
             }
             Spacer()
-            Text((Network.selected == .caltrain ? pacificClock : londonClock).string(from: entry.date))
+            Text((network == .caltrain ? pacificClock : londonClock).string(from: entry.date))
                 .foregroundStyle(amber.opacity(0.6))
         }
         .font(.system(.caption, design: .monospaced).bold())

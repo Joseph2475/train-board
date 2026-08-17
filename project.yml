@@ -5,10 +5,12 @@ options:
     macOS: "14.0"
 settings:
   base:
-    CODE_SIGN_IDENTITY: "Apple Development"
+    CODE_SIGN_IDENTITY: "Developer ID Application"
     CODE_SIGN_STYLE: Manual
     DEVELOPMENT_TEAM: 69TCYK37VK
     CODE_SIGN_INJECT_BASE_ENTITLEMENTS: "NO"
+    ENABLE_HARDENED_RUNTIME: "YES"
+    OTHER_CODE_SIGN_FLAGS: "--timestamp"
 targets:
   TrainBoard:
     type: application

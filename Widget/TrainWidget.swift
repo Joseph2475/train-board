@@ -33,26 +33,31 @@ struct StationQuery: EntityStringQuery {
         identifiers.map(StationEntity.init(id:))
     }
 
+    // networks that timed out get benched briefly so the next keystroke's search is instant
+    nonisolated(unsafe) static var deadUntil: [String: Date] = [:]
+
     func entities(matching string: String) async throws -> [StationEntity] {
-        await withTaskGroup(of: [StationEntity].self) { group in
-            for network in Network.allCases {
+        let live = Network.allCases.filter { (Self.deadUntil[$0.idPrefix] ?? .distantPast) < .now }
+        return await withTaskGroup(of: [StationEntity]?.self) { group in
+            for network in live {
                 group.addTask {
-                    // cap each network at 4s so one dead API cannot stall the whole picker
+                    // race each network against a short deadline; a hung API loses fast
                     await withTaskGroup(of: [StationEntity]?.self) { race in
                         race.addTask {
                             ((try? await searchStations(network: network, string)) ?? []).map { .make(network, $0) }
                         }
                         race.addTask {
-                            try? await Task.sleep(for: .seconds(4))
+                            try? await Task.sleep(for: .seconds(1.5))
                             return nil
                         }
                         let first = await race.next() ?? nil
                         race.cancelAll()
-                        return first ?? []
+                        if first == nil { Self.deadUntil[network.idPrefix] = .now.addingTimeInterval(120) }
+                        return first
                     }
                 }
             }
-            return await group.reduce(into: []) { $0 += $1 }
+            return await group.reduce(into: []) { $0 += ($1 ?? []) }
         }
     }
 

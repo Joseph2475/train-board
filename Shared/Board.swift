@@ -74,6 +74,9 @@ enum Network: String, CaseIterable {
         allCases.first { $0.idPrefix == prefix } ?? .ukRail
     }
 
+    // ponytail: Germany's code stays wired up but unlisted until its API proves reliable
+    static var active: [Network] { allCases.filter { $0 != .germany } }
+
     // ponytail: bundled key is fine at beta scale (511 caps keys at 60 req/hr, so ~4-5 users);
     // move behind a caching proxy before any wide release
     static var api511Key: String {

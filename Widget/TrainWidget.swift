@@ -37,7 +37,7 @@ struct StationQuery: EntityStringQuery {
     nonisolated(unsafe) static var deadUntil: [String: Date] = [:]
 
     func entities(matching string: String) async throws -> [StationEntity] {
-        let live = Network.allCases.filter { (Self.deadUntil[$0.idPrefix] ?? .distantPast) < .now }
+        let live = Network.active.filter { (Self.deadUntil[$0.idPrefix] ?? .distantPast) < .now }
         return await withTaskGroup(of: [StationEntity]?.self) { group in
             for network in live {
                 group.addTask {

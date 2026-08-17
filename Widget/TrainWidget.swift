@@ -62,8 +62,11 @@ struct StationQuery: EntityStringQuery {
     }
 
     func suggestedEntities() async throws -> [StationEntity] {
-        [.make(Network.selected, Station.selected),
-         .make(.caltrain, Network.caltrain.fallbackStation)]
+        // one flagship station per live network so every country is discoverable
+        let suggestions = [StationEntity.make(Network.selected, Station.selected)]
+            + Network.active.map { .make($0, $0.fallbackStation) }
+        var seen = Set<String>()
+        return suggestions.filter { seen.insert($0.id).inserted }
     }
 }
 

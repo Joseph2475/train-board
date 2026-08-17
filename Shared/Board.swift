@@ -46,9 +46,32 @@ struct Service: Decodable {
 enum Network: String, CaseIterable {
     case ukRail = "UK Rail"
     case caltrain = "Caltrain"
+    case swiss = "Switzerland"
+    case germany = "Germany"
+    case ireland = "Ireland"
 
     static var selected: Network {
         Network(rawValue: Station.sharedDefaults.string(forKey: "network") ?? "") ?? .ukRail
+    }
+
+    var timeZone: TimeZone {
+        switch self {
+        case .ukRail: TimeZone(identifier: "Europe/London")!
+        case .caltrain: TimeZone(identifier: "America/Los_Angeles")!
+        case .swiss: TimeZone(identifier: "Europe/Zurich")!
+        case .germany: TimeZone(identifier: "Europe/Berlin")!
+        case .ireland: TimeZone(identifier: "Europe/Dublin")!
+        }
+    }
+
+    var idPrefix: String {
+        switch self {
+        case .ukRail: "uk"; case .caltrain: "ct"; case .swiss: "ch"; case .germany: "de"; case .ireland: "ie"
+        }
+    }
+
+    static func from(prefix: String) -> Network {
+        allCases.first { $0.idPrefix == prefix } ?? .ukRail
     }
 
     // ponytail: bundled key is fine at beta scale (511 caps keys at 60 req/hr, so ~4-5 users);
@@ -62,14 +85,28 @@ enum Network: String, CaseIterable {
         switch self {
         case .ukRail: Station(code: "STD", name: "Stroud")
         case .caltrain: Station(code: "san_francisco", name: "San Francisco")
+        case .swiss: Station(code: "8503000", name: "Zürich HB")
+        case .germany: Station(code: "8011160", name: "Berlin Hbf")
+        case .ireland: Station(code: "CNLLY", name: "Dublin Connolly")
         }
     }
+}
+
+// "HH:mm" in a network's local timezone; shared by the board view and all fetchers
+func clock(for timeZone: TimeZone) -> DateFormatter {
+    let f = DateFormatter()
+    f.dateFormat = "HH:mm"
+    f.timeZone = timeZone
+    return f
 }
 
 func fetchBoard(network: Network = .selected, code: String) async throws -> [Service] {
     switch network {
     case .ukRail: try await ukBoard(code: code)
     case .caltrain: try await caltrainBoard(stop: code)
+    case .swiss: try await swissBoard(code: code)
+    case .germany: try await germanBoard(code: code)
+    case .ireland: try await irishBoard(code: code)
     }
 }
 
@@ -77,6 +114,9 @@ func searchStations(network: Network = .selected, _ query: String) async throws 
     switch network {
     case .ukRail: try await ukSearch(query)
     case .caltrain: try await caltrainSearch(query)
+    case .swiss: try await swissSearch(query)
+    case .germany: try await germanSearch(query)
+    case .ireland: try await irishSearch(query)
     }
 }
 
@@ -393,7 +433,7 @@ struct BoardView: View {
                 Text(station.name.uppercased())
             }
             Spacer()
-            Text((network == .caltrain ? pacificClock : londonClock).string(from: entry.date))
+            Text(clock(for: network.timeZone).string(from: entry.date))
                 .foregroundStyle(amber.opacity(0.6))
         }
         .font(.system(.caption, design: .monospaced).bold())

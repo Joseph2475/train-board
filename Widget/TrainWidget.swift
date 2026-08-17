@@ -13,7 +13,7 @@ struct StationEntity: AppEntity {
 
     var parsed: (network: Network, station: Station) {
         let parts = id.split(separator: "|", maxSplits: 2).map(String.init)
-        let network: Network = parts.first == "ct" ? .caltrain : .ukRail
+        let network = Network.from(prefix: parts.first ?? "uk")
         guard parts.count == 3 else { return (network, network.fallbackStation) }
         return (network, Station(code: parts[1], name: parts[2]))
     }
@@ -24,7 +24,7 @@ struct StationEntity: AppEntity {
     }
 
     static func make(_ network: Network, _ station: Station) -> StationEntity {
-        StationEntity(id: "\(network == .caltrain ? "ct" : "uk")|\(station.code)|\(station.name)")
+        StationEntity(id: "\(network.idPrefix)|\(station.code)|\(station.name)")
     }
 }
 
@@ -34,9 +34,14 @@ struct StationQuery: EntityStringQuery {
     }
 
     func entities(matching string: String) async throws -> [StationEntity] {
-        let uk = (try? await searchStations(network: .ukRail, string)) ?? []
-        let ct = (try? await searchStations(network: .caltrain, string)) ?? []
-        return uk.map { .make(.ukRail, $0) } + ct.map { .make(.caltrain, $0) }
+        await withTaskGroup(of: [StationEntity].self) { group in
+            for network in Network.allCases {
+                group.addTask {
+                    ((try? await searchStations(network: network, string)) ?? []).map { .make(network, $0) }
+                }
+            }
+            return await group.reduce(into: []) { $0 += $1 }
+        }
     }
 
     func suggestedEntities() async throws -> [StationEntity] {
@@ -96,13 +101,13 @@ struct Provider: AppIntentTimelineProvider {
     }
 
     private func departed(_ s: Service, by date: Date, network: Network) -> Bool {
-        // ponytail: board times are local-timezone only for UK; Caltrain shows Pacific times, skip the filter
-        guard network == .ukRail else { return false }
-        // effective departure: etd when it is a clock time, else scheduled std
+        // effective departure: etd when it is a clock time, else scheduled std;
+        // board times are in the network's timezone, so compare in that calendar
         let time = (s.etd?.contains(":") == true ? s.etd : s.std) ?? ""
         let parts = time.split(separator: ":").compactMap { Int($0) }
         guard parts.count == 2 else { return false }
-        let cal = Calendar.current
+        var cal = Calendar.current
+        cal.timeZone = network.timeZone
         guard var dep = cal.date(bySettingHour: parts[0], minute: parts[1], second: 0, of: date) else { return false }
         // ponytail: times near midnight roll to tomorrow; assume nothing sits on the board >6h
         if dep < date.addingTimeInterval(-6 * 3600) { dep = cal.date(byAdding: .day, value: 1, to: dep) ?? dep }

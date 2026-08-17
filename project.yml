@@ -45,6 +45,7 @@ targets:
       path: Widget/Info.plist
       properties:
         CFBundleDisplayName: Train Board
+        CFBundleIconFile: AppIcon
         CFBundlePackageType: XPC!
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension

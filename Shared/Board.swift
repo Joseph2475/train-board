@@ -106,8 +106,7 @@ private func huxleyBoard(code: String) async throws -> [Service] {
     throw lastError
 }
 
-// Fallback: traini.ac UK rail MCP server (keyless, Darwin-backed). MCP is JSON-RPC over
-// one POST; the departures payload is JSON inside result.content[0].text.
+// Primary: traini.ac UK rail REST API (keyless, Darwin-backed). One GET, plain JSON.
 private let londonClock: DateFormatter = {
     let f = DateFormatter()
     f.dateFormat = "HH:mm"
@@ -116,13 +115,6 @@ private let londonClock: DateFormatter = {
 }()
 
 private func trainiacBoard(code: String) async throws -> [Service] {
-    struct Rpc: Decodable {
-        struct Result_: Decodable {
-            struct Content: Decodable { let text: String }
-            let content: [Content]
-        }
-        let result: Result_
-    }
     struct DepartureList: Decodable {
         struct Departure: Decodable {
             struct Place: Decodable { let name: String }
@@ -137,20 +129,16 @@ private func trainiacBoard(code: String) async throws -> [Service] {
         let results: [Departure]
     }
 
-    var request = URLRequest(url: URL(string: "https://api.traini.ac/mcp")!)
-    request.httpMethod = "POST"
-    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    request.setValue("application/json, text/event-stream", forHTTPHeaderField: "Accept")
-    request.httpBody = try JSONSerialization.data(withJSONObject: [
-        "jsonrpc": "2.0", "id": 1, "method": "tools/call",
-        "params": ["name": "departures", "arguments": ["station": code]],
-    ])
-    let (data, response) = try await URLSession.shared.data(for: request)
+    guard let encoded = code.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+        throw URLError(.badURL)
+    }
+    let url = URL(string: "https://api.traini.ac/api/departures/\(encoded)")!
+    let (data, response) = try await URLSession.shared.data(from: url)
+    // Non-2xx is a JSON error body (unknown station, database down): let the Huxley fallback run.
     guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
-    let text = try JSONDecoder().decode(Rpc.self, from: data).result.content.first?.text ?? ""
     let iso = ISO8601DateFormatter()
     var seenTrains = Set<String>()
-    return try JSONDecoder().decode(DepartureList.self, from: Data(text.utf8)).results
+    return try JSONDecoder().decode(DepartureList.self, from: data).results
         .filter { $0.not_for_display != true && seenTrains.insert($0.train_id ?? UUID().uuidString).inserted }
         .compactMap { d -> (Date, Service)? in
             guard let departs = iso.date(from: d.departs) else { return nil }

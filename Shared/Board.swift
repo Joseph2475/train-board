@@ -89,7 +89,7 @@ private func ukBoard(code: String) async throws -> [Service] {
 
 private func huxleyBoard(code: String) async throws -> [Service] {
     // ponytail: public Huxley2 demo instance is flaky (intermittent 500s), so retry
-    let url = URL(string: "https://huxley2.azurewebsites.net/departures/\(code.lowercased())/15")!
+    let url = URL(string: "https://huxley2.azurewebsites.net/departures/\(code.lowercased())/20")!
     var lastError: Error = URLError(.unknown)
     for attempt in 1...2 {
         do {
@@ -132,7 +132,7 @@ private func trainiacBoard(code: String) async throws -> [Service] {
     guard let encoded = code.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
         throw URLError(.badURL)
     }
-    let url = URL(string: "https://api.traini.ac/api/departures/\(encoded)")!
+    let url = URL(string: "https://api.traini.ac/api/departures/\(encoded)?limit=20")!
     let (data, response) = try await URLSession.shared.data(from: url)
     // Non-2xx is a JSON error body (unknown station, database down): let the Huxley fallback run.
     guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }

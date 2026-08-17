@@ -118,7 +118,7 @@ struct WidgetBoard: View {
 
     var body: some View {
         BoardView(entry: entry, station: entry.station, network: entry.network,
-                  rowLimit: family == .systemLarge ? 13 : (family == .systemSmall ? 5 : 6),
+                  rowLimit: family == .systemLarge ? 18 : (family == .systemSmall ? 5 : 6),
                   compact: family == .systemSmall)
             .containerBackground(.black, for: .widget)
     }

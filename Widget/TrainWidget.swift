@@ -37,7 +37,19 @@ struct StationQuery: EntityStringQuery {
         await withTaskGroup(of: [StationEntity].self) { group in
             for network in Network.allCases {
                 group.addTask {
-                    ((try? await searchStations(network: network, string)) ?? []).map { .make(network, $0) }
+                    // cap each network at 4s so one dead API cannot stall the whole picker
+                    await withTaskGroup(of: [StationEntity]?.self) { race in
+                        race.addTask {
+                            ((try? await searchStations(network: network, string)) ?? []).map { .make(network, $0) }
+                        }
+                        race.addTask {
+                            try? await Task.sleep(for: .seconds(4))
+                            return nil
+                        }
+                        let first = await race.next() ?? nil
+                        race.cancelAll()
+                        return first ?? []
+                    }
                 }
             }
             return await group.reduce(into: []) { $0 += $1 }

@@ -6,7 +6,7 @@ struct Station: Identifiable, Hashable {
     var name: String
     var id: String { code }
 
-    static let fallback = Station(code: "STD", name: "Stroud")
+    static let fallback = Station(code: "PAD", name: "London Paddington")
 
     // app-group defaults shared between app and widget (Sequoia requires the team-ID prefix)
     static let sharedDefaults = UserDefaults(suiteName: "69TCYK37VK.com.josephmoylan.trainboard") ?? .standard
@@ -83,7 +83,7 @@ enum Network: String, CaseIterable {
 
     var fallbackStation: Station {
         switch self {
-        case .ukRail: Station(code: "STD", name: "Stroud")
+        case .ukRail: Station(code: "PAD", name: "London Paddington")
         case .caltrain: Station(code: "san_francisco", name: "San Francisco")
         case .swiss: Station(code: "8503000", name: "Zürich HB")
         case .germany: Station(code: "8011160", name: "Berlin Hbf")

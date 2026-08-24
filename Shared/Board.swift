@@ -49,6 +49,7 @@ enum Network: String, CaseIterable {
     case swiss = "Switzerland"
     case germany = "Germany"
     case ireland = "Ireland"
+    case portugal = "Portugal"
 
     static var selected: Network {
         Network(rawValue: Station.sharedDefaults.string(forKey: "network") ?? "") ?? .ukRail
@@ -61,12 +62,13 @@ enum Network: String, CaseIterable {
         case .swiss: TimeZone(identifier: "Europe/Zurich")!
         case .germany: TimeZone(identifier: "Europe/Berlin")!
         case .ireland: TimeZone(identifier: "Europe/Dublin")!
+        case .portugal: TimeZone(identifier: "Europe/Lisbon")!
         }
     }
 
     var idPrefix: String {
         switch self {
-        case .ukRail: "uk"; case .caltrain: "ct"; case .swiss: "ch"; case .germany: "de"; case .ireland: "ie"
+        case .ukRail: "uk"; case .caltrain: "ct"; case .swiss: "ch"; case .germany: "de"; case .ireland: "ie"; case .portugal: "pt"
         }
     }
 
@@ -91,6 +93,7 @@ enum Network: String, CaseIterable {
         case .swiss: Station(code: "8503000", name: "Zürich HB")
         case .germany: Station(code: "8011160", name: "Berlin Hbf")
         case .ireland: Station(code: "CNLLY", name: "Dublin Connolly")
+        case .portugal: Station(code: "94-31039", name: "Lisboa Oriente")
         }
     }
 }
@@ -110,6 +113,7 @@ func fetchBoard(network: Network = .selected, code: String) async throws -> [Ser
     case .swiss: try await swissBoard(code: code)
     case .germany: try await germanBoard(code: code)
     case .ireland: try await irishBoard(code: code)
+    case .portugal: try await portugalBoard(code: code)
     }
 }
 
@@ -120,6 +124,7 @@ func searchStations(network: Network = .selected, _ query: String) async throws 
     case .swiss: try await swissSearch(query)
     case .germany: try await germanSearch(query)
     case .ireland: try await irishSearch(query)
+    case .portugal: try await portugalSearch(query)
     }
 }
 

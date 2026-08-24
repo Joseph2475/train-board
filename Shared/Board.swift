@@ -96,7 +96,7 @@ enum Network: String, CaseIterable {
         case .germany: Station(code: "8011160", name: "Berlin Hbf")
         case .ireland: Station(code: "CNLLY", name: "Dublin Connolly")
         case .portugal: Station(code: "94-31039", name: "Lisboa Oriente")
-        case .netTrams: Station(code: "9400ZZNOOMS1", name: "Old Market Square (NET04)")
+        case .netTrams: Station(code: "9400ZZNOOMS", name: "Old Market Square")
         }
     }
 }

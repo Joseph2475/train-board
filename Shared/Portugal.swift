@@ -55,13 +55,23 @@ func portugalBoard(code: String) async throws -> [Service] {
         .compactMap { stop -> Service? in
             guard let departs = stop.departureTime else { return nil }
             var etd = "On time"
-            if let delay = stop.delay, delay > 0, let expected = stop.ETD { etd = expected }
+            if let delay = stop.delay, delay > 0 {
+                // CP often reports delay minutes with a null ETD, so derive the expected time
+                etd = stop.ETD ?? addingMinutes(delay, to: departs)
+            }
             return Service(std: departs, etd: etd,
                            platform: stop.platform,
                            isCancelled: stop.supression != nil,
                            destination: [.init(locationName: stop.trainDestination.designation)])
         }
         .sorted { ($0.std ?? "") < ($1.std ?? "") }
+}
+
+private func addingMinutes(_ minutes: Int, to hhmm: String) -> String {
+    let parts = hhmm.split(separator: ":").compactMap { Int($0) }
+    guard parts.count == 2 else { return hhmm }
+    let total = (parts[0] * 60 + parts[1] + minutes) % (24 * 60)
+    return String(format: "%02d:%02d", total / 60, total % 60)
 }
 
 private struct CPStation: Decodable {

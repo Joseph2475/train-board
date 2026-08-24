@@ -61,6 +61,14 @@ private func loadNETStops() async throws {
     }
 }
 
+// NET is one north-south line through the city: label trams by which end they're heading to
+private func netDirection(to destination: String?) -> String? {
+    let d = (destination ?? "").lowercased()
+    if d.contains("hucknall") || d.contains("phoenix") { return "N" }
+    if d.contains("toton") || d.contains("clifton") { return "S" }
+    return nil
+}
+
 func netTramBoard(code: String) async throws -> [Service] {
     try await loadNETStops()
     let platforms = (cachedNETPlatforms ?? []).filter { $0.atco.hasPrefix(code) }
@@ -86,7 +94,7 @@ func netTramBoard(code: String) async throws -> [Service] {
                         etd = abs(expected.timeIntervalSince(aimed)) > 60 ? london.string(from: expected) : "On time"
                     }
                     return (aimed, Service(std: london.string(from: aimed), etd: etd,
-                                           platform: platform.indicator.isEmpty ? nil : platform.indicator,
+                                           platform: netDirection(to: v.destinationName) ?? platform.indicator,
                                            isCancelled: v.cancelled == true,
                                            destination: [.init(locationName: v.destinationName ?? "?")]))
                 }

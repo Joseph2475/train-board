@@ -14,7 +14,7 @@
     --text:#e8e4da; --muted:#9a958a;
   }
   * { box-sizing:border-box; margin:0; padding:0; }
-  html { scroll-behavior:smooth; }
+  html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
   body { background:var(--bg); color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
     -webkit-font-smoothing:antialiased; line-height:1.6; overflow-x:hidden; }
@@ -80,7 +80,16 @@
     text-align:center; color:var(--muted); font-size:.85rem; }
   footer a { color:var(--amber); text-decoration:none; }
   footer a:hover { text-decoration:underline; }
-  @media (max-width:600px){ header{padding-top:52px} .board{font-size:.74rem} }
+  @media (max-width:600px){
+    header { padding-top:48px }
+    .wrap { padding:0 18px; padding-left:max(18px, env(safe-area-inset-left)); padding-right:max(18px, env(safe-area-inset-right)); }
+    .tagline { font-size:1rem }
+    .ctas { flex-direction:column; align-items:stretch }
+    .btn { justify-content:center }
+    .board { font-size:.68rem; padding:14px 14px 12px }
+    .board td { padding:4px 8px 4px 0 }
+    section { padding-top:56px }
+  }
   @media (prefers-reduced-motion:reduce){ .flap.spin{animation:none} .board{transition:none} }
 </style>
 </head>

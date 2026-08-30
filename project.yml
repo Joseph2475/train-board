@@ -29,6 +29,8 @@ targets:
         CFBundleDisplayName: Train Board
         CFBundleIconFile: AppIcon
         CFBundleIconName: AppIcon
+        CFBundleShortVersionString: "1.2"
+        CFBundleVersion: "2"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.josephmoylan.trainboard
@@ -51,6 +53,8 @@ targets:
         CFBundleDisplayName: Train Board
         CFBundleIconFile: AppIcon
         CFBundleIconName: AppIcon
+        CFBundleShortVersionString: "1.2"
+        CFBundleVersion: "2"
         CFBundlePackageType: XPC!
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension

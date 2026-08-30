@@ -4,76 +4,157 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TrainBoard — live departure boards for your Mac desktop</title>
-<meta name="description" content="A live train departure board as a native macOS widget. UK Rail, Caltrain, Switzerland, Ireland, Portugal, Nottingham trams. Free, notarized, auto-updating.">
+<meta name="description" content="Live train departure boards as native macOS widgets. UK Rail, Caltrain, Switzerland, Ireland, Portugal, Nottingham trams. Free, notarized, auto-updating.">
+<meta property="og:title" content="TrainBoard">
+<meta property="og:description" content="Live train departure boards as native macOS desktop widgets. Six networks, free.">
 <style>
-  :root { --amber:#ffa500; --dim:#8a5a00; --bg:#0d0d0d; --panel:#000; }
-  * { box-sizing:border-box; margin:0; }
-  body { background:var(--bg); color:#eee; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; line-height:1.6; }
-  main { max-width:720px; margin:0 auto; padding:48px 24px 80px; }
-  h1 { font-size:2.2rem; letter-spacing:-.02em; }
-  h1 .train { margin-right:.3em; }
-  .tag { color:#aaa; margin:.4em 0 1.6em; font-size:1.1rem; }
-  .board { background:var(--panel); border-radius:12px; padding:18px 20px; font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:.86rem; box-shadow:0 12px 40px rgba(0,0,0,.6); border:1px solid #222; overflow-x:auto; }
-  .board table { border-collapse:collapse; width:100%; white-space:nowrap; }
-  .board .hd { display:flex; justify-content:space-between; color:var(--amber); font-weight:700; border-bottom:1px solid var(--dim); padding-bottom:6px; margin-bottom:6px; }
-  .board td { padding:3px 10px 3px 0; color:var(--amber); }
-  .board tr:nth-child(even) td { background:rgba(255,255,255,.03); }
-  .board .cols td { color:var(--dim); font-size:.72rem; letter-spacing:.08em; }
-  .ontime { color:#4cd964 !important; } .late { color:#ffd60a !important; } .cancelled { color:#ff453a !important; }
-  .cta { display:inline-block; margin:28px 0 8px; background:var(--amber); color:#000; font-weight:700; padding:14px 28px; border-radius:10px; text-decoration:none; font-size:1.05rem; }
-  .cta:hover { filter:brightness(1.1); }
-  .sub { color:#888; font-size:.85rem; margin-bottom:2.2em; }
-  h2 { margin:2.2em 0 .6em; font-size:1.3rem; color:var(--amber); }
-  ul { padding-left:1.2em; } li { margin:.35em 0; color:#ccc; }
-  a { color:var(--amber); }
-  footer { margin-top:3em; color:#777; font-size:.85rem; border-top:1px solid #222; padding-top:1.2em; }
-  @media (prefers-color-scheme: light) {
-    :root { --bg:#f5f1e8; } body { color:#222; } .tag { color:#555; } li { color:#333; } .sub { color:#666; } footer { color:#666; border-color:#ddd; }
+  :root {
+    --amber:#ffb01f; --amber-dim:#9a6a10; --green:#3fdc70; --red:#ff5347;
+    --bg:#0a0a0c; --bg2:#101014; --panel:#050506; --line:#1e1e24;
+    --text:#e8e4da; --muted:#9a958a;
   }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body {
+    background:
+      radial-gradient(1200px 600px at 50% -200px, #1a1408 0%, transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.6;
+  }
+  .mono { font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; }
+  .wrap { max-width:980px; margin:0 auto; padding:0 28px; }
+
+  /* hero */
+  header { padding:88px 0 64px; text-align:center; }
+  .wordmark {
+    font-family:"SF Mono",ui-monospace,Menlo,monospace;
+    font-size:clamp(2.4rem,6vw,3.6rem); font-weight:700; letter-spacing:.04em;
+    color:var(--amber);
+    text-shadow:0 0 24px rgba(255,176,31,.35), 0 0 90px rgba(255,176,31,.12);
+  }
+  .wordmark .dim { color:var(--amber-dim); }
+  .tagline { margin:18px auto 0; max-width:34em; font-size:1.15rem; color:var(--muted); }
+  .ctas { margin-top:34px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+  .btn {
+    display:inline-flex; align-items:center; gap:.5em;
+    padding:14px 26px; border-radius:12px; font-weight:600; font-size:1rem;
+    text-decoration:none; transition:transform .12s ease, filter .12s ease;
+  }
+  .btn:hover { transform:translateY(-1px); filter:brightness(1.08); }
+  .btn-primary { background:var(--amber); color:#141005; box-shadow:0 6px 30px rgba(255,176,31,.25); }
+  .btn-ghost { color:var(--text); border:1px solid var(--line); background:rgba(255,255,255,.02); }
+  .meta { margin-top:16px; font-size:.82rem; color:var(--muted); letter-spacing:.02em; }
+  .meta span { margin:0 .5em; }
+
+  /* board */
+  .board-frame { margin:56px auto 0; max-width:640px; perspective:900px; }
+  .board {
+    background:var(--panel); border:1px solid #26262c; border-radius:14px;
+    padding:20px 22px 16px;
+    box-shadow:0 30px 80px rgba(0,0,0,.65), 0 0 60px rgba(255,176,31,.06), inset 0 1px 0 rgba(255,255,255,.04);
+    font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:.85rem;
+    overflow-x:auto;
+  }
+  .board .hd { display:flex; justify-content:space-between; align-items:baseline;
+    color:var(--amber); font-weight:700; letter-spacing:.06em;
+    border-bottom:1px solid rgba(255,176,31,.35); padding-bottom:8px; margin-bottom:4px; }
+  .board table { border-collapse:collapse; width:100%; white-space:nowrap; }
+  .board td { padding:5px 12px 5px 0; color:var(--amber); }
+  .board td:last-child { text-align:right; padding-right:0; }
+  .board tr:nth-child(even) td { background:rgba(255,255,255,.025); }
+  .board .cols td { color:var(--amber-dim); font-size:.68rem; letter-spacing:.14em; padding-top:8px; }
+  .ontime { color:var(--green) !important; } .late { color:#ffd60a !important; } .cancelled { color:var(--red) !important; }
+  .glow { text-shadow:0 0 10px currentColor; }
+
+  /* sections */
+  section { padding:72px 0 0; }
+  h2 { font-size:1.05rem; letter-spacing:.18em; text-transform:uppercase; color:var(--amber-dim); margin-bottom:26px; text-align:center; }
+  .grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+  .card {
+    background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:20px 22px;
+  }
+  .card .flag { font-size:1.5rem; }
+  .card h3 { font-size:1rem; margin:.5em 0 .2em; color:var(--text); }
+  .card p { font-size:.88rem; color:var(--muted); }
+  .steps { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); counter-reset:step; }
+  .step { background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:22px; }
+  .step::before {
+    counter-increment:step; content:counter(step,decimal-leading-zero);
+    font-family:"SF Mono",ui-monospace,monospace; color:var(--amber); font-size:.8rem; letter-spacing:.15em;
+  }
+  .step p { margin-top:.5em; font-size:.92rem; color:var(--muted); }
+  .step strong { color:var(--text); }
+
+  footer { margin-top:88px; padding:28px 0 48px; border-top:1px solid var(--line);
+    text-align:center; color:var(--muted); font-size:.85rem; }
+  footer a { color:var(--amber); text-decoration:none; }
+  footer a:hover { text-decoration:underline; }
+
+  @media (max-width:600px){ header{padding-top:56px} .board{font-size:.74rem} }
 </style>
 </head>
 <body>
-<main>
-  <h1><span class="train">🚆</span>TrainBoard</h1>
-  <p class="tag">Live train departure boards as native macOS desktop widgets. Six networks, no accounts, no API keys, free.</p>
+<div class="wrap">
 
-  <div class="board" role="img" aria-label="Example departure board for London Paddington">
-    <div class="hd"><span>LONDON PADDINGTON</span><span>10:18</span></div>
-    <table>
-      <tr class="cols"><td>TIME</td><td>DESTINATION</td><td>PLAT</td><td>EXPECTED</td></tr>
-      <tr><td>10:23</td><td>Oxford</td><td>8</td><td class="late">10:25</td></tr>
-      <tr><td>10:25</td><td>Heathrow T5</td><td>7</td><td class="ontime">On time</td></tr>
-      <tr><td>10:30</td><td>Weston-Super-Mare</td><td>3</td><td class="ontime">On time</td></tr>
-      <tr><td>10:32</td><td>Cheltenham Spa</td><td>10</td><td class="cancelled">Cancelled</td></tr>
-      <tr><td>10:36</td><td>Exeter St Davids</td><td>12</td><td class="ontime">On time</td></tr>
-      <tr><td>10:48</td><td>Swansea</td><td>5</td><td class="ontime">On time</td></tr>
-    </table>
-  </div>
+  <header>
+    <div class="wordmark">TRAIN<span class="dim">BOARD</span></div>
+    <p class="tagline">Live departure boards from real stations, as native widgets on your Mac desktop. Six countries. No accounts, no keys, free.</p>
+    <div class="ctas">
+      <a class="btn btn-primary" href="https://github.com/Joseph2475/train-board/releases/latest/download/TrainBoard.zip">⬇&#xFE0E;&nbsp;Download for macOS</a>
+      <a class="btn btn-ghost" href="https://github.com/Joseph2475/train-board">Source on GitHub</a>
+    </div>
+    <p class="meta">Free<span>·</span>Notarized by Apple<span>·</span>Auto-updates<span>·</span>macOS 14+</p>
 
-  <a class="cta" href="https://github.com/Joseph2475/train-board/releases/latest/download/TrainBoard.zip">Download for macOS</a>
-  <p class="sub">Free · Notarized by Apple · Auto-updates · macOS 14+ · <a href="https://github.com/Joseph2475/train-board">Source on GitHub</a></p>
+    <div class="board-frame">
+      <div class="board" role="img" aria-label="Example departure board for London Paddington">
+        <div class="hd"><span>LONDON PADDINGTON</span><span class="glow" id="clock">10:18</span></div>
+        <table>
+          <tr class="cols"><td>TIME</td><td>DESTINATION</td><td>PLAT</td><td>EXPECTED</td></tr>
+          <tr><td>10:23</td><td>Oxford</td><td>8</td><td class="late glow">10:25</td></tr>
+          <tr><td>10:25</td><td>Heathrow T5</td><td>7</td><td class="ontime glow">On time</td></tr>
+          <tr><td>10:30</td><td>Weston-Super-Mare</td><td>3</td><td class="ontime glow">On time</td></tr>
+          <tr><td>10:32</td><td>Cheltenham Spa</td><td>10</td><td class="cancelled glow">Cancelled</td></tr>
+          <tr><td>10:36</td><td>Exeter St Davids</td><td>12</td><td class="ontime glow">On time</td></tr>
+          <tr><td>10:48</td><td>Swansea</td><td>5</td><td class="ontime glow">On time</td></tr>
+        </table>
+      </div>
+    </div>
+  </header>
 
-  <h2>Networks</h2>
-  <ul>
-    <li><strong>UK Rail</strong> — every National Rail station, live Darwin data with platforms, delays and cancellations</li>
-    <li><strong>Caltrain</strong> — live predictions, both directions per station</li>
-    <li><strong>Switzerland</strong> — real platforms and delays across SBB</li>
-    <li><strong>Ireland</strong> — Irish Rail's official realtime feed</li>
-    <li><strong>Portugal</strong> — CP: Lisbon suburban, Porto urban, IC/AP intercity</li>
-    <li><strong>Nottingham NET trams</strong> — timetable-based departures</li>
-  </ul>
+  <section>
+    <h2>Six networks, one board</h2>
+    <div class="grid">
+      <div class="card"><span class="flag">🇬🇧</span><h3>UK Rail</h3><p>Every National Rail station. Live Darwin data: platforms, delays, cancellations.</p></div>
+      <div class="card"><span class="flag">🇺🇸</span><h3>Caltrain</h3><p>Live predictions straight from Caltrain's own feed, both directions per station.</p></div>
+      <div class="card"><span class="flag">🇨🇭</span><h3>Switzerland</h3><p>The whole SBB network with real platforms and delay estimates.</p></div>
+      <div class="card"><span class="flag">🇮🇪</span><h3>Ireland</h3><p>Irish Rail's official realtime feed, DART to intercity.</p></div>
+      <div class="card"><span class="flag">🇵🇹</span><h3>Portugal</h3><p>CP's live API: Lisbon suburban, Porto urban, Alfa Pendular and Intercidades.</p></div>
+      <div class="card"><span class="flag">🚋</span><h3>Nottingham NET</h3><p>Every tram stop, both platforms, timetable-based departures.</p></div>
+    </div>
+  </section>
 
-  <h2>How it works</h2>
-  <ul>
-    <li>Add as many widgets as you like — small, medium or large — each with its own station</li>
-    <li>Right-click a widget → <strong>Edit Train Board</strong> → search any station</li>
-    <li>Boards update every minute on the minute; departed trains drop off, delays turn amber, cancellations red</li>
-    <li>Amber-on-black in dark mode, ink-on-paper in light mode</li>
-  </ul>
+  <section>
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step"><p><strong>Download and open.</strong> Notarized by Apple — no warnings, no setup. Updates install themselves.</p></div>
+      <div class="step"><p><strong>Add widgets.</strong> Right-click your desktop → Edit Widgets → Train Board. Small, medium or large.</p></div>
+      <div class="step"><p><strong>Pick stations.</strong> Right-click any widget → Edit Train Board → search any station. One widget per station, as many as you like.</p></div>
+    </div>
+  </section>
 
   <footer>
-    Made by <a href="https://x.com/joseph_moylan2">@joseph_moylan2</a> · UK data by <a href="https://traini.ac">traini.ac</a>, built by <a href="https://x.com/alistaiir">@alistaiir</a> — cheers Ali
+    Made by <a href="https://x.com/joseph_moylan2">@joseph_moylan2</a> &nbsp;·&nbsp; UK data by <a href="https://traini.ac">traini.ac</a>, built by <a href="https://x.com/alistaiir">@alistaiir</a> — cheers Ali
   </footer>
-</main>
+
+</div>
+<script>
+  // live London clock on the demo board
+  const clock = document.getElementById('clock');
+  const tick = () => clock.textContent = new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit', timeZone:'Europe/London'});
+  tick(); setInterval(tick, 5000);
+</script>
 </body>
 </html>

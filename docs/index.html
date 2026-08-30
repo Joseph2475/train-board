@@ -216,7 +216,6 @@ if (window.THREE && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
   const cam = new THREE.PerspectiveCamera(60, 1, .1, 100); cam.position.z = 12;
   const world = new THREE.Scene();
 
-  // metro-map style tracks, far behind the content
   const TRACKS = [
     [[-26,-9],[-8,-9],[-2,-5],[10,-5],[16,-9],[26,-9]],
     [[-26,-3],[-12,-3],[-6,1],[4,1],[12,-3],[26,-3]],
@@ -224,48 +223,68 @@ if (window.THREE && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
     [[-26,10],[-4,10],[2,6],[26,6]],
     [[-26,-12],[0,-12],[8,-8],[26,-8]],
   ];
-  const paths = TRACKS.map((wps, i) => {
-    const pts = wps.map(([x,y]) => new THREE.Vector3(x, y, -4 - (i % 3) * 2));
+  const lines = TRACKS.map((wps, i) => {
+    const z = -4 - (i % 3) * 2;
+    const pts = wps.map(([x, y]) => new THREE.Vector3(x, y, z));
     const curve = new THREE.CatmullRomCurve3(pts, false, "centripetal", .6);
-    const line = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(curve.getPoints(140)),
-      new THREE.LineBasicMaterial({ color:0xffb01f, transparent:true, opacity:.08 }));
-    world.add(line);
-    // mini-metro style station squares at the interior bends
-    wps.slice(1, -1).forEach(([x, y]) => {
+    world.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(140)),
+      new THREE.LineBasicMaterial({ color:0xffb01f, transparent:true, opacity:.08 })));
+    // stations at the interior bends; locate each along the arc so trains can stop there
+    const samples = curve.getSpacedPoints(240);
+    const stopsU = wps.slice(1, -1).map(([x, y]) => {
+      let best = 0, bd = 1e9;
+      samples.forEach((p, j) => { const d = (p.x - x) ** 2 + (p.y - y) ** 2; if (d < bd) { bd = d; best = j; } });
       const st = new THREE.Mesh(new THREE.PlaneGeometry(.3, .3),
         new THREE.MeshBasicMaterial({ color:0xffb01f, transparent:true, opacity:.3, depthWrite:false }));
-      st.position.set(x, y, -4 - (i % 3) * 2);
-      world.add(st);
-    });
-    return curve;
+      st.position.set(x, y, z); world.add(st);
+      return best / 240;
+    }).sort((a, b) => a - b);
+    return { curve, stopsU };
   });
 
-  // trains: solid carriages oriented along the track, mini-metro style
+  // trains: solid carriages, mini-metro style, easing in and out of stations
   const trains = [];
-  paths.forEach(curve => {
+  lines.forEach(({ curve, stopsU }) => {
     for (let k = 0; k < 2; k++) {
       const carriages = [];
       for (let c = 0; c < 3; c++) {
-        const body = new THREE.Mesh(
-          new THREE.BoxGeometry(.62, .13, .1),
+        const body = new THREE.Mesh(new THREE.BoxGeometry(.62, .13, .1),
           new THREE.MeshBasicMaterial({ color:0xffb01f, transparent:true, opacity:.85, depthWrite:false }));
         world.add(body); carriages.push(body);
       }
-      trains.push({ curve, t: Math.random(), dir: Math.random() > .5 ? 1 : -1, speed: .0005 + Math.random() * .0008, carriages });
+      trains.push({ curve, stopsU, t: Math.random(), dir: Math.random() > .5 ? 1 : -1,
+                    base: .0009 + Math.random() * .0006, carriages, dwellUntil: 0, prevStop: null });
     }
   });
+
+  const ahead = (from, to, dir) => ((to - from) * dir % 1 + 1) % 1;
+  const nextStop = tr => {
+    let best = null, bd = 2;
+    tr.stopsU.forEach(u => { const d = ahead(tr.t, u, tr.dir); if (d > .002 && d < bd) { bd = d; best = u; } });
+    return best ?? tr.stopsU[0];
+  };
 
   let mx = 0, my = 0;
   addEventListener("mousemove", e => { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; });
   const resize = () => { renderer.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); };
   addEventListener("resize", resize); resize();
+
+  const AXIS = new THREE.Vector3(1, 0, 0), tan = new THREE.Vector3();
   (function loop(){
     requestAnimationFrame(loop);
-    const AXIS = new THREE.Vector3(1, 0, 0), tan = new THREE.Vector3();
+    const now = performance.now();
     trains.forEach(tr => {
-      tr.t += tr.speed * tr.dir;
-      if (tr.t > 1) tr.t -= 1; if (tr.t < 0) tr.t += 1;
+      if (now >= tr.dwellUntil) {
+        const target = nextStop(tr);
+        const dIn = ahead(tr.t, target, tr.dir);
+        const dOut = tr.prevStop == null ? 1 : ahead(tr.prevStop, tr.t, tr.dir);
+        const ease = Math.min(1, dIn / .05, .18 + dOut / .05);
+        tr.t = ((tr.t + tr.dir * tr.base * Math.max(ease, .08)) % 1 + 1) % 1;
+        if (ahead(tr.t, target, tr.dir) > .9) {
+          tr.t = target; tr.prevStop = target;
+          tr.dwellUntil = now + 900 + Math.random() * 900;
+        }
+      }
       tr.carriages.forEach((m, c) => {
         const u = ((tr.t - tr.dir * c * .016) % 1 + 1) % 1;
         m.position.copy(tr.curve.getPointAt(u));

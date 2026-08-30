@@ -140,12 +140,13 @@ struct Provider: AppIntentTimelineProvider {
 struct WidgetBoard: View {
     var entry: BoardEntry
     @Environment(\.widgetFamily) var family
+    @Environment(\.colorScheme) var scheme
 
     var body: some View {
         BoardView(entry: entry, station: entry.station, network: entry.network,
                   rowLimit: family == .systemLarge ? 18 : (family == .systemSmall ? 5 : 6),
                   compact: family == .systemSmall)
-            .containerBackground(.black, for: .widget)
+            .containerBackground(scheme == .dark ? Color.black : Color(red: 0.97, green: 0.95, blue: 0.90), for: .widget)
     }
 }
 

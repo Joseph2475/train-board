@@ -414,7 +414,10 @@ struct BoardView: View {
     var compact: Bool = false
     var onStationTap: (() -> Void)? = nil
 
-    private let amber = Color.orange
+    @Environment(\.colorScheme) private var scheme
+
+    // dark: classic amber on black; light: dark ink on warm paper
+    private var amber: Color { scheme == .dark ? .orange : Color(red: 0.42, green: 0.27, blue: 0.03) }
 
     private var services: [Service] { Array(entry.services.prefix(rowLimit)) }
 
@@ -500,7 +503,7 @@ struct BoardView: View {
                     .padding(.vertical, 1.5)
                     .padding(.horizontal, 3)
                     .frame(maxWidth: .infinity, alignment: alignment)
-                    .background(i % 2 == 1 ? Color.white.opacity(0.03) : .clear)
+                    .background(i % 2 == 1 ? (scheme == .dark ? Color.white.opacity(0.03) : Color.black.opacity(0.05)) : .clear)
             }
         }
         .frame(width: width)
@@ -525,7 +528,7 @@ struct BoardView: View {
 
     private func statusColor(_ s: Service) -> Color {
         if s.isCancelled { return .red }
-        if s.etd == "On time" { return .green }
-        return .yellow
+        if s.etd == "On time" { return scheme == .dark ? .green : Color(red: 0, green: 0.5, blue: 0.18) }
+        return scheme == .dark ? .yellow : .orange
     }
 }

@@ -2,3 +2,4 @@ build/
 *.xcodeproj
 .DS_Store
 Shared/Secrets.swift
+graphify-out/

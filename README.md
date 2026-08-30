@@ -1,23 +1,22 @@
 # TrainBoard
 
-A live train departure board as a native macOS desktop widget. Amber-on-black, styled like the real thing: time, destination, platform, and expected columns, with delayed and cancelled trains colour-coded. Departed trains drop off the board on the minute.
+A live train departure board as a native macOS desktop widget. Styled like the real thing: time, destination, platform, and expected columns, with delayed and cancelled trains colour-coded. Departed trains drop off the board on the minute. Amber-on-black in dark mode, ink-on-paper in light mode.
 
-Supports two networks, switchable in the app:
-- **UK Rail** - live Darwin-backed departures from [traini.ac](https://traini.ac) (no API key needed), falling back to the public [Huxley2](https://huxley2.azurewebsites.net) proxy
-- **Caltrain** - live predictions from caltrain.com's own feed (no API key needed), with an optional 511.org fallback
+Six networks, all keyless - pick any station per widget:
+- **UK Rail** - live Darwin-backed departures from [traini.ac](https://traini.ac), falling back to the public [Huxley2](https://huxley2.azurewebsites.net) proxy
+- **Caltrain** - live predictions from caltrain.com's own feed, optional 511.org fallback
+- **Switzerland** - transport.opendata.ch, real platforms and delays
+- **Ireland** - Irish Rail's official realtime feed
+- **Portugal** - CP's own travel API: Lisbon suburban, Porto urban, IC/AP intercity
+- **NET Trams (Nottingham)** - Traveline timetable data (NET publishes no live tracking; real-time lights up automatically if they ever do)
 
 UK data is served by traini.ac, built by [Alistair (@alistaiir)](https://x.com/alistaiir) - cheers Ali.
 
 ## Install
 
-Grab `TrainBoard.zip` from the [latest release](https://github.com/Joseph2475/train-board/releases/latest), then:
+Grab `TrainBoard.zip` from the [latest release](https://github.com/Joseph2475/train-board/releases/latest), unzip, drag `TrainBoard.app` into Applications, and open it. Releases are notarized - no security warnings.
 
-1. Unzip and drag `TrainBoard.app` into Applications.
-2. Open it. macOS will block it (not notarized) - go to System Settings > Privacy & Security, scroll down, click **Open Anyway**.
-3. Launch the app once, search for your station, and set it.
-4. Right-click the desktop > Edit Widgets > search "Train Board" and add the widget. If it doesn't show in the list, log out and back in.
-
-The app window is just settings - the widget runs on its own, app closed or not.
+Then: right-click the desktop > Edit Widgets > search "Train Board" and add widgets in small, medium, or large. Right-click any widget > **Edit Train Board** to pick its station - add as many widgets as you like, each with its own station.
 
 ## Build from source
 

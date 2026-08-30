@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TrainBoard — live departure boards for your Mac desktop</title>
+<title>TrainBoard: live departure boards for your Mac desktop</title>
 <meta name="description" content="Live train departure boards as native macOS widgets. UK Rail, Caltrain, Switzerland, Ireland, Portugal, Nottingham trams. Free, notarized, auto-updating.">
 <meta property="og:title" content="TrainBoard">
 <meta property="og:description" content="Live train departure boards as native macOS desktop widgets. Six networks, free.">
@@ -120,14 +120,14 @@
   <section>
     <h2>How it works</h2>
     <div class="steps">
-      <div class="step"><p><strong>Download and open.</strong> Notarized by Apple — no warnings, no setup. Updates install themselves.</p></div>
+      <div class="step"><p><strong>Download and open.</strong> Notarized by Apple, so it opens without any fuss. Updates install themselves.</p></div>
       <div class="step"><p><strong>Add widgets.</strong> Right-click your desktop → Edit Widgets → Train Board. Small, medium or large.</p></div>
       <div class="step"><p><strong>Pick stations.</strong> Right-click any widget → Edit Train Board → search any station. As many boards as you like.</p></div>
     </div>
   </section>
 
   <footer>
-    Made by <a href="https://x.com/joseph_moylan2">@joseph_moylan2</a> &nbsp;·&nbsp; UK data by <a href="https://traini.ac">traini.ac</a>, built by <a href="https://x.com/alistaiir">@alistaiir</a> — cheers Ali
+    Made by <a href="https://x.com/joseph_moylan2">@joseph_moylan2</a> &nbsp;·&nbsp; UK data by <a href="https://traini.ac">traini.ac</a>, built by <a href="https://x.com/alistaiir">@alistaiir</a>. Cheers Ali
   </footer>
 
 </div>
@@ -234,19 +234,21 @@ if (window.THREE && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
     return curve;
   });
 
-  // trains: bright headlight + fading carriages gliding along each track
+  // trains: elongated carriages with a headlight, oriented along the track
   const trains = [];
   paths.forEach(curve => {
     for (let k = 0; k < 2; k++) {
       const carriages = [];
-      for (let c = 0; c < 7; c++) {
-        const m = new THREE.Mesh(
-          new THREE.SphereGeometry(Math.max(.03, .09 - c * .01), 6, 6),
-          new THREE.MeshBasicMaterial({ color: c ? 0xffb01f : 0xfff3d0, transparent:true,
-            opacity: c ? Math.max(.06, .5 - c * .07) : .95, blending:THREE.AdditiveBlending, depthWrite:false }));
-        world.add(m); carriages.push(m);
+      for (let c = 0; c < 3; c++) {
+        const body = new THREE.Mesh(
+          new THREE.BoxGeometry(.62, .13, .1),
+          new THREE.MeshBasicMaterial({ color:0xffb01f, transparent:true, opacity:.5, blending:THREE.AdditiveBlending, depthWrite:false }));
+        world.add(body); carriages.push(body);
       }
-      trains.push({ curve, t: Math.random(), dir: Math.random() > .5 ? 1 : -1, speed: .0005 + Math.random() * .0008, carriages });
+      const headlight = new THREE.Mesh(new THREE.SphereGeometry(.05, 6, 6),
+        new THREE.MeshBasicMaterial({ color:0xfff3d0, transparent:true, opacity:.95, blending:THREE.AdditiveBlending, depthWrite:false }));
+      world.add(headlight);
+      trains.push({ curve, t: Math.random(), dir: Math.random() > .5 ? 1 : -1, speed: .0005 + Math.random() * .0008, carriages, headlight });
     }
   });
 
@@ -256,13 +258,18 @@ if (window.THREE && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
   addEventListener("resize", resize); resize();
   (function loop(){
     requestAnimationFrame(loop);
+    const AXIS = new THREE.Vector3(1, 0, 0), tan = new THREE.Vector3();
     trains.forEach(tr => {
       tr.t += tr.speed * tr.dir;
       if (tr.t > 1) tr.t -= 1; if (tr.t < 0) tr.t += 1;
       tr.carriages.forEach((m, c) => {
-        let u = tr.t - tr.dir * c * .007; u = ((u % 1) + 1) % 1;
+        const u = ((tr.t - tr.dir * c * .016) % 1 + 1) % 1;
         m.position.copy(tr.curve.getPointAt(u));
+        tan.copy(tr.curve.getTangentAt(u)).multiplyScalar(tr.dir).normalize();
+        m.quaternion.setFromUnitVectors(AXIS, tan);
       });
+      const hu = ((tr.t + tr.dir * .011) % 1 + 1) % 1;
+      tr.headlight.position.copy(tr.curve.getPointAt(hu));
     });
     cam.position.x += (mx * 1.6 - cam.position.x) * .04;
     cam.position.y += (-my * 1.0 - cam.position.y) * .04;

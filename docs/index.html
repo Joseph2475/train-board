@@ -57,7 +57,6 @@
   .st-late { color:var(--yellow); text-shadow:0 0 10px currentColor; }
   .st-cancelled { color:var(--red); text-shadow:0 0 10px currentColor; }
   .glow { text-shadow:0 0 10px currentColor; }
-  .hint { margin-top:14px; font-size:.75rem; color:#6a655c; letter-spacing:.08em; text-transform:uppercase; }
 
   section { padding:76px 0 0; }
   h2 { font-size:1.02rem; letter-spacing:.2em; text-transform:uppercase; color:var(--amber-dim); margin-bottom:26px; text-align:center; }
@@ -103,7 +102,6 @@
         <div class="hd"><span id="station"></span><span class="glow" id="clock"></span></div>
         <table id="rows"></table>
       </div>
-      <p class="hint">click the board to change country · it does that on its own too</p>
     </div>
   </header>
 
@@ -210,31 +208,65 @@ sceneWrap.addEventListener("mousemove", e => {
 });
 sceneWrap.addEventListener("mouseleave", () => board.style.transform = "rotateY(0deg) rotateX(0deg)");
 
-// ---------- three.js signal-lights background ----------
+// ---------- three.js night railway background ----------
 if (window.THREE && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
   const canvas = document.getElementById("bg");
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha:true, antialias:false });
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha:true, antialias:true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  const cam = new THREE.PerspectiveCamera(60, 1, 0.1, 100); cam.position.z = 12;
+  const cam = new THREE.PerspectiveCamera(60, 1, .1, 100); cam.position.z = 12;
   const world = new THREE.Scene();
-  const N = 260, pos = new Float32Array(N * 3), speed = [];
-  for (let i = 0; i < N; i++) { pos[i*3] = (Math.random()-.5)*40; pos[i*3+1] = (Math.random()-.5)*24; pos[i*3+2] = (Math.random()-.5)*14; speed.push(.002+Math.random()*.008); }
-  const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  const dot = (color, size, opacity) => new THREE.Points(geo, new THREE.PointsMaterial({ color, size, transparent:true, opacity, blending:THREE.AdditiveBlending, depthWrite:false }));
-  world.add(dot(0xffb01f, .10, .8));
-  world.add(dot(0xffb01f, .3, .12)); // halo layer
+
+  // metro-map style tracks, far behind the content
+  const TRACKS = [
+    [[-26,-9],[-8,-9],[-2,-5],[10,-5],[16,-9],[26,-9]],
+    [[-26,-3],[-12,-3],[-6,1],[4,1],[12,-3],[26,-3]],
+    [[-26,5],[-14,5],[-6,9],[6,9],[14,5],[26,5]],
+    [[-26,10],[-4,10],[2,6],[26,6]],
+    [[-26,-12],[0,-12],[8,-8],[26,-8]],
+  ];
+  const paths = TRACKS.map((wps, i) => {
+    const pts = wps.map(([x,y]) => new THREE.Vector3(x, y, -4 - (i % 3) * 2));
+    const curve = new THREE.CatmullRomCurve3(pts, false, "centripetal", .6);
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(curve.getPoints(140)),
+      new THREE.LineBasicMaterial({ color:0xffb01f, transparent:true, opacity:.08 }));
+    world.add(line);
+    return curve;
+  });
+
+  // trains: bright headlight + fading carriages gliding along each track
+  const trains = [];
+  paths.forEach(curve => {
+    for (let k = 0; k < 2; k++) {
+      const carriages = [];
+      for (let c = 0; c < 7; c++) {
+        const m = new THREE.Mesh(
+          new THREE.SphereGeometry(Math.max(.03, .09 - c * .01), 6, 6),
+          new THREE.MeshBasicMaterial({ color: c ? 0xffb01f : 0xfff3d0, transparent:true,
+            opacity: c ? Math.max(.06, .5 - c * .07) : .95, blending:THREE.AdditiveBlending, depthWrite:false }));
+        world.add(m); carriages.push(m);
+      }
+      trains.push({ curve, t: Math.random(), dir: Math.random() > .5 ? 1 : -1, speed: .0005 + Math.random() * .0008, carriages });
+    }
+  });
+
   let mx = 0, my = 0;
-  addEventListener("mousemove", e => { mx = e.clientX/innerWidth - .5; my = e.clientY/innerHeight - .5; });
-  const resize = () => { renderer.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth/innerHeight; cam.updateProjectionMatrix(); };
+  addEventListener("mousemove", e => { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; });
+  const resize = () => { renderer.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); };
   addEventListener("resize", resize); resize();
-  const p = geo.attributes.position.array;
   (function loop(){
     requestAnimationFrame(loop);
-    for (let i = 0; i < N; i++) { p[i*3] += speed[i]; if (p[i*3] > 20) p[i*3] = -20; } // drift right like passing trains
-    geo.attributes.position.needsUpdate = true;
-    cam.position.x += (mx*2 - cam.position.x) * .04;
-    cam.position.y += (-my*1.2 - cam.position.y) * .04;
-    cam.lookAt(0,0,0);
+    trains.forEach(tr => {
+      tr.t += tr.speed * tr.dir;
+      if (tr.t > 1) tr.t -= 1; if (tr.t < 0) tr.t += 1;
+      tr.carriages.forEach((m, c) => {
+        let u = tr.t - tr.dir * c * .007; u = ((u % 1) + 1) % 1;
+        m.position.copy(tr.curve.getPointAt(u));
+      });
+    });
+    cam.position.x += (mx * 1.6 - cam.position.x) * .04;
+    cam.position.y += (-my * 1.0 - cam.position.y) * .04;
+    cam.lookAt(0, 0, 0);
     renderer.render(world, cam);
   })();
 }

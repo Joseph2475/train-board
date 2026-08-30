@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>TrainBoard</title>
+    <item>
+      <title>1.4</title>
+      <pubDate>Sun, 30 Aug 2026 21:57:15 +0100</pubDate>
+      <sparkle:version>4</sparkle:version>
+      <sparkle:shortVersionString>1.4</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[<p>TrainBoard now updates itself. Also new: a website at joseph2475.github.io/train-board.</p>]]></description>
+      <enclosure url="https://github.com/Joseph2475/train-board/releases/download/v1.4/TrainBoard.zip" length="7072495" type="application/octet-stream" sparkle:edSignature="5rcjPE5abTcoul703y2wLjdLnU+K7UilljoFg6XeB8frBp4233B75ejeGikrHaR9tS9bZC8ahT463GwThyImBg==" length="7072495" />
+    </item>
+  </channel>
+</rss>

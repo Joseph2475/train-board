@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrainBoard — live departure boards for your Mac desktop</title>
+<meta name="description" content="A live train departure board as a native macOS widget. UK Rail, Caltrain, Switzerland, Ireland, Portugal, Nottingham trams. Free, notarized, auto-updating.">
+<style>
+  :root { --amber:#ffa500; --dim:#8a5a00; --bg:#0d0d0d; --panel:#000; }
+  * { box-sizing:border-box; margin:0; }
+  body { background:var(--bg); color:#eee; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; line-height:1.6; }
+  main { max-width:720px; margin:0 auto; padding:48px 24px 80px; }
+  h1 { font-size:2.2rem; letter-spacing:-.02em; }
+  h1 .train { margin-right:.3em; }
+  .tag { color:#aaa; margin:.4em 0 1.6em; font-size:1.1rem; }
+  .board { background:var(--panel); border-radius:12px; padding:18px 20px; font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:.86rem; box-shadow:0 12px 40px rgba(0,0,0,.6); border:1px solid #222; overflow-x:auto; }
+  .board table { border-collapse:collapse; width:100%; white-space:nowrap; }
+  .board .hd { display:flex; justify-content:space-between; color:var(--amber); font-weight:700; border-bottom:1px solid var(--dim); padding-bottom:6px; margin-bottom:6px; }
+  .board td { padding:3px 10px 3px 0; color:var(--amber); }
+  .board tr:nth-child(even) td { background:rgba(255,255,255,.03); }
+  .board .cols td { color:var(--dim); font-size:.72rem; letter-spacing:.08em; }
+  .ontime { color:#4cd964 !important; } .late { color:#ffd60a !important; } .cancelled { color:#ff453a !important; }
+  .cta { display:inline-block; margin:28px 0 8px; background:var(--amber); color:#000; font-weight:700; padding:14px 28px; border-radius:10px; text-decoration:none; font-size:1.05rem; }
+  .cta:hover { filter:brightness(1.1); }
+  .sub { color:#888; font-size:.85rem; margin-bottom:2.2em; }
+  h2 { margin:2.2em 0 .6em; font-size:1.3rem; color:var(--amber); }
+  ul { padding-left:1.2em; } li { margin:.35em 0; color:#ccc; }
+  a { color:var(--amber); }
+  footer { margin-top:3em; color:#777; font-size:.85rem; border-top:1px solid #222; padding-top:1.2em; }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#f5f1e8; } body { color:#222; } .tag { color:#555; } li { color:#333; } .sub { color:#666; } footer { color:#666; border-color:#ddd; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1><span class="train">🚆</span>TrainBoard</h1>
+  <p class="tag">Live train departure boards as native macOS desktop widgets. Six networks, no accounts, no API keys, free.</p>
+
+  <div class="board" role="img" aria-label="Example departure board for London Paddington">
+    <div class="hd"><span>LONDON PADDINGTON</span><span>10:18</span></div>
+    <table>
+      <tr class="cols"><td>TIME</td><td>DESTINATION</td><td>PLAT</td><td>EXPECTED</td></tr>
+      <tr><td>10:23</td><td>Oxford</td><td>8</td><td class="late">10:25</td></tr>
+      <tr><td>10:25</td><td>Heathrow T5</td><td>7</td><td class="ontime">On time</td></tr>
+      <tr><td>10:30</td><td>Weston-Super-Mare</td><td>3</td><td class="ontime">On time</td></tr>
+      <tr><td>10:32</td><td>Cheltenham Spa</td><td>10</td><td class="cancelled">Cancelled</td></tr>
+      <tr><td>10:36</td><td>Exeter St Davids</td><td>12</td><td class="ontime">On time</td></tr>
+      <tr><td>10:48</td><td>Swansea</td><td>5</td><td class="ontime">On time</td></tr>
+    </table>
+  </div>
+
+  <a class="cta" href="https://github.com/Joseph2475/train-board/releases/latest/download/TrainBoard.zip">Download for macOS</a>
+  <p class="sub">Free · Notarized by Apple · Auto-updates · macOS 14+ · <a href="https://github.com/Joseph2475/train-board">Source on GitHub</a></p>
+
+  <h2>Networks</h2>
+  <ul>
+    <li><strong>UK Rail</strong> — every National Rail station, live Darwin data with platforms, delays and cancellations</li>
+    <li><strong>Caltrain</strong> — live predictions, both directions per station</li>
+    <li><strong>Switzerland</strong> — real platforms and delays across SBB</li>
+    <li><strong>Ireland</strong> — Irish Rail's official realtime feed</li>
+    <li><strong>Portugal</strong> — CP: Lisbon suburban, Porto urban, IC/AP intercity</li>
+    <li><strong>Nottingham NET trams</strong> — timetable-based departures</li>
+  </ul>
+
+  <h2>How it works</h2>
+  <ul>
+    <li>Add as many widgets as you like — small, medium or large — each with its own station</li>
+    <li>Right-click a widget → <strong>Edit Train Board</strong> → search any station</li>
+    <li>Boards update every minute on the minute; departed trains drop off, delays turn amber, cancellations red</li>
+    <li>Amber-on-black in dark mode, ink-on-paper in light mode</li>
+  </ul>
+
+  <footer>
+    Made by <a href="https://x.com/joseph_moylan2">@joseph_moylan2</a> · UK data by <a href="https://traini.ac">traini.ac</a>, built by <a href="https://x.com/alistaiir">@alistaiir</a> — cheers Ali
+  </footer>
+</main>
+</body>
+</html>

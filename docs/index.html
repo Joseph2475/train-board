@@ -9,94 +9,84 @@
 <meta property="og:description" content="Live train departure boards as native macOS desktop widgets. Six networks, free.">
 <style>
   :root {
-    --amber:#ffb01f; --amber-dim:#9a6a10; --green:#3fdc70; --red:#ff5347;
-    --bg:#0a0a0c; --bg2:#101014; --panel:#050506; --line:#1e1e24;
+    --amber:#ffb01f; --amber-dim:#9a6a10; --green:#3fdc70; --red:#ff5347; --yellow:#ffd60a;
+    --bg:#08080a; --bg2:#101014; --panel:#050506; --line:#1e1e24;
     --text:#e8e4da; --muted:#9a958a;
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   html { scroll-behavior:smooth; }
-  body {
-    background:
-      radial-gradient(1200px 600px at 50% -200px, #1a1408 0%, transparent 60%),
-      var(--bg);
-    color:var(--text);
+  body { background:var(--bg); color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
-    -webkit-font-smoothing:antialiased;
-    line-height:1.6;
-  }
-  .mono { font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; }
-  .wrap { max-width:980px; margin:0 auto; padding:0 28px; }
+    -webkit-font-smoothing:antialiased; line-height:1.6; overflow-x:hidden; }
+  #bg { position:fixed; inset:0; z-index:0; }
+  .wrap { position:relative; z-index:1; max-width:1000px; margin:0 auto; padding:0 28px; }
 
-  /* hero */
-  header { padding:88px 0 64px; text-align:center; }
-  .wordmark {
-    font-family:"SF Mono",ui-monospace,Menlo,monospace;
-    font-size:clamp(2.4rem,6vw,3.6rem); font-weight:700; letter-spacing:.04em;
-    color:var(--amber);
-    text-shadow:0 0 24px rgba(255,176,31,.35), 0 0 90px rgba(255,176,31,.12);
-  }
+  header { padding:84px 0 60px; text-align:center; }
+  .wordmark { font-family:"SF Mono",ui-monospace,Menlo,monospace;
+    font-size:clamp(2.4rem,6vw,3.8rem); font-weight:700; letter-spacing:.05em; color:var(--amber);
+    text-shadow:0 0 24px rgba(255,176,31,.4), 0 0 90px rgba(255,176,31,.15); }
   .wordmark .dim { color:var(--amber-dim); }
   .tagline { margin:18px auto 0; max-width:34em; font-size:1.15rem; color:var(--muted); }
-  .ctas { margin-top:34px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
-  .btn {
-    display:inline-flex; align-items:center; gap:.5em;
-    padding:14px 26px; border-radius:12px; font-weight:600; font-size:1rem;
-    text-decoration:none; transition:transform .12s ease, filter .12s ease;
-  }
-  .btn:hover { transform:translateY(-1px); filter:brightness(1.08); }
-  .btn-primary { background:var(--amber); color:#141005; box-shadow:0 6px 30px rgba(255,176,31,.25); }
-  .btn-ghost { color:var(--text); border:1px solid var(--line); background:rgba(255,255,255,.02); }
-  .meta { margin-top:16px; font-size:.82rem; color:var(--muted); letter-spacing:.02em; }
+  .ctas { margin-top:32px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+  .btn { display:inline-flex; align-items:center; gap:.5em; padding:14px 26px; border-radius:12px;
+    font-weight:600; font-size:1rem; text-decoration:none; transition:transform .15s ease, filter .15s ease, box-shadow .15s ease; }
+  .btn:hover { transform:translateY(-2px) scale(1.02); filter:brightness(1.1); }
+  .btn-primary { background:var(--amber); color:#141005; box-shadow:0 6px 30px rgba(255,176,31,.3); }
+  .btn-primary:hover { box-shadow:0 10px 44px rgba(255,176,31,.45); }
+  .btn-ghost { color:var(--text); border:1px solid var(--line); background:rgba(255,255,255,.03); }
+  .meta { margin-top:16px; font-size:.82rem; color:var(--muted); }
   .meta span { margin:0 .5em; }
 
-  /* board */
-  .board-frame { margin:56px auto 0; max-width:640px; perspective:900px; }
-  .board {
-    background:var(--panel); border:1px solid #26262c; border-radius:14px;
-    padding:20px 22px 16px;
-    box-shadow:0 30px 80px rgba(0,0,0,.65), 0 0 60px rgba(255,176,31,.06), inset 0 1px 0 rgba(255,255,255,.04);
-    font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:.85rem;
-    overflow-x:auto;
-  }
-  .board .hd { display:flex; justify-content:space-between; align-items:baseline;
-    color:var(--amber); font-weight:700; letter-spacing:.06em;
-    border-bottom:1px solid rgba(255,176,31,.35); padding-bottom:8px; margin-bottom:4px; }
+  .board-scene { margin:54px auto 0; max-width:660px; perspective:1200px; }
+  .board { background:var(--panel); border:1px solid #26262c; border-radius:16px; padding:22px 24px 18px;
+    box-shadow:0 30px 90px rgba(0,0,0,.7), 0 0 70px rgba(255,176,31,.07), inset 0 1px 0 rgba(255,255,255,.05);
+    font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:.88rem;
+    transform-style:preserve-3d; transition:transform .25s ease-out; will-change:transform; overflow-x:auto; cursor:default; }
+  .board .hd { display:flex; justify-content:space-between; align-items:baseline; color:var(--amber);
+    font-weight:700; letter-spacing:.06em; border-bottom:1px solid rgba(255,176,31,.35);
+    padding-bottom:8px; margin-bottom:4px; white-space:nowrap; }
   .board table { border-collapse:collapse; width:100%; white-space:nowrap; }
   .board td { padding:5px 12px 5px 0; color:var(--amber); }
   .board td:last-child { text-align:right; padding-right:0; }
   .board tr:nth-child(even) td { background:rgba(255,255,255,.025); }
   .board .cols td { color:var(--amber-dim); font-size:.68rem; letter-spacing:.14em; padding-top:8px; }
-  .ontime { color:var(--green) !important; } .late { color:#ffd60a !important; } .cancelled { color:var(--red) !important; }
+  .flap { display:inline-block; min-width:.62em; text-align:center; }
+  .flap.spin { animation:flapblur .06s linear infinite; }
+  @keyframes flapblur { 0%{transform:scaleY(1)} 50%{transform:scaleY(.6); opacity:.7} 100%{transform:scaleY(1)} }
+  .st-ontime { color:var(--green); text-shadow:0 0 10px currentColor; }
+  .st-late { color:var(--yellow); text-shadow:0 0 10px currentColor; }
+  .st-cancelled { color:var(--red); text-shadow:0 0 10px currentColor; }
   .glow { text-shadow:0 0 10px currentColor; }
+  .hint { margin-top:14px; font-size:.75rem; color:#6a655c; letter-spacing:.08em; text-transform:uppercase; }
 
-  /* sections */
-  section { padding:72px 0 0; }
-  h2 { font-size:1.05rem; letter-spacing:.18em; text-transform:uppercase; color:var(--amber-dim); margin-bottom:26px; text-align:center; }
+  section { padding:76px 0 0; }
+  h2 { font-size:1.02rem; letter-spacing:.2em; text-transform:uppercase; color:var(--amber-dim); margin-bottom:26px; text-align:center; }
   .grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
-  .card {
-    background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:20px 22px;
-  }
+  .card { background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:20px 22px;
+    transition:transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+  .card:hover { transform:translateY(-4px); border-color:rgba(255,176,31,.45); box-shadow:0 14px 40px rgba(0,0,0,.5), 0 0 30px rgba(255,176,31,.08); }
   .card .flag { font-size:1.5rem; }
-  .card h3 { font-size:1rem; margin:.5em 0 .2em; color:var(--text); }
+  .card h3 { font-size:1rem; margin:.5em 0 .2em; }
   .card p { font-size:.88rem; color:var(--muted); }
   .steps { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); counter-reset:step; }
-  .step { background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:22px; }
-  .step::before {
-    counter-increment:step; content:counter(step,decimal-leading-zero);
-    font-family:"SF Mono",ui-monospace,monospace; color:var(--amber); font-size:.8rem; letter-spacing:.15em;
-  }
+  .step { background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:22px;
+    transition:transform .2s ease, border-color .2s ease; }
+  .step:hover { transform:translateY(-4px); border-color:rgba(255,176,31,.45); }
+  .step::before { counter-increment:step; content:counter(step,decimal-leading-zero);
+    font-family:"SF Mono",ui-monospace,monospace; color:var(--amber); font-size:.8rem; letter-spacing:.15em; }
   .step p { margin-top:.5em; font-size:.92rem; color:var(--muted); }
   .step strong { color:var(--text); }
 
-  footer { margin-top:88px; padding:28px 0 48px; border-top:1px solid var(--line);
+  footer { margin-top:90px; padding:28px 0 48px; border-top:1px solid var(--line);
     text-align:center; color:var(--muted); font-size:.85rem; }
   footer a { color:var(--amber); text-decoration:none; }
   footer a:hover { text-decoration:underline; }
-
-  @media (max-width:600px){ header{padding-top:56px} .board{font-size:.74rem} }
+  @media (max-width:600px){ header{padding-top:52px} .board{font-size:.74rem} }
+  @media (prefers-reduced-motion:reduce){ .flap.spin{animation:none} .board{transition:none} }
 </style>
 </head>
 <body>
+<canvas id="bg" aria-hidden="true"></canvas>
 <div class="wrap">
 
   <header>
@@ -108,19 +98,12 @@
     </div>
     <p class="meta">Free<span>·</span>Notarized by Apple<span>·</span>Auto-updates<span>·</span>macOS 14+</p>
 
-    <div class="board-frame">
-      <div class="board" role="img" aria-label="Example departure board for London Paddington">
-        <div class="hd"><span>LONDON PADDINGTON</span><span class="glow" id="clock">10:18</span></div>
-        <table>
-          <tr class="cols"><td>TIME</td><td>DESTINATION</td><td>PLAT</td><td>EXPECTED</td></tr>
-          <tr><td>10:23</td><td>Oxford</td><td>8</td><td class="late glow">10:25</td></tr>
-          <tr><td>10:25</td><td>Heathrow T5</td><td>7</td><td class="ontime glow">On time</td></tr>
-          <tr><td>10:30</td><td>Weston-Super-Mare</td><td>3</td><td class="ontime glow">On time</td></tr>
-          <tr><td>10:32</td><td>Cheltenham Spa</td><td>10</td><td class="cancelled glow">Cancelled</td></tr>
-          <tr><td>10:36</td><td>Exeter St Davids</td><td>12</td><td class="ontime glow">On time</td></tr>
-          <tr><td>10:48</td><td>Swansea</td><td>5</td><td class="ontime glow">On time</td></tr>
-        </table>
+    <div class="board-scene">
+      <div class="board" id="board" role="img" aria-label="Animated demo departure board cycling through stations">
+        <div class="hd"><span id="station"></span><span class="glow" id="clock"></span></div>
+        <table id="rows"></table>
       </div>
+      <p class="hint">click the board to change country · it does that on its own too</p>
     </div>
   </header>
 
@@ -141,7 +124,7 @@
     <div class="steps">
       <div class="step"><p><strong>Download and open.</strong> Notarized by Apple — no warnings, no setup. Updates install themselves.</p></div>
       <div class="step"><p><strong>Add widgets.</strong> Right-click your desktop → Edit Widgets → Train Board. Small, medium or large.</p></div>
-      <div class="step"><p><strong>Pick stations.</strong> Right-click any widget → Edit Train Board → search any station. One widget per station, as many as you like.</p></div>
+      <div class="step"><p><strong>Pick stations.</strong> Right-click any widget → Edit Train Board → search any station. As many boards as you like.</p></div>
     </div>
   </section>
 
@@ -150,11 +133,111 @@
   </footer>
 
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
 <script>
-  // live London clock on the demo board
-  const clock = document.getElementById('clock');
-  const tick = () => clock.textContent = new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit', timeZone:'Europe/London'});
-  tick(); setInterval(tick, 5000);
+// ---------- split-flap departure board ----------
+const FLAPCHARS = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-&";
+const SCENES = [
+  { tz:"Europe/London", station:"LONDON PADDINGTON", rows:[
+    ["10:23","Oxford","8","10:25","late"],["10:25","Heathrow T5","7","On time","ontime"],
+    ["10:30","Weston-Super-Mare","3","On time","ontime"],["10:32","Cheltenham Spa","10","Cancelled","cancelled"],
+    ["10:36","Exeter St Davids","12","On time","ontime"],["10:48","Swansea","5","On time","ontime"]]},
+  { tz:"Europe/Zurich", station:"ZURICH HB", rows:[
+    ["11:02","Bern","31","On time","ontime"],["11:04","Luzern","6","On time","ontime"],
+    ["11:07","Zurich Flughafen","44","11:09","late"],["11:11","Chur","13","On time","ontime"],
+    ["11:16","Milano Centrale","10","On time","ontime"],["11:20","St. Gallen","33","On time","ontime"]]},
+  { tz:"America/Los_Angeles", station:"SAN FRANCISCO", rows:[
+    ["15:25","San Jose Diridon","S","On time","ontime"],["15:55","Tamien","S","On time","ontime"],
+    ["16:12","Hillsdale","S","16:15","late"],["16:25","San Jose Diridon","S","On time","ontime"],
+    ["16:55","Gilroy","S","On time","ontime"],["17:10","San Jose Diridon","S","On time","ontime"]]},
+  { tz:"Europe/Lisbon", station:"LISBOA ORIENTE", rows:[
+    ["11:23","Santa Apolonia","8","11:48","late"],["11:31","Azambuja","4","On time","ontime"],
+    ["11:39","Porto Campanha","5","On time","ontime"],["11:45","Sintra","2","On time","ontime"],
+    ["11:52","Faro","7","On time","ontime"],["12:01","Braga","5","On time","ontime"]]},
+  { tz:"Europe/Dublin", station:"DUBLIN CONNOLLY", rows:[
+    ["10:40","Howth","4","On time","ontime"],["10:47","Belfast","2","10:52","late"],
+    ["10:55","Maynooth","6","On time","ontime"],["11:00","Bray","3","On time","ontime"],
+    ["11:05","Sligo","5","On time","ontime"],["11:15","Greystones","3","On time","ontime"]]},
+  { tz:"Europe/London", station:"OLD MARKET SQUARE", rows:[
+    ["10:31","Hucknall","N","On time","ontime"],["10:34","Toton Lane","S","On time","ontime"],
+    ["10:38","Phoenix Park","N","On time","ontime"],["10:41","Clifton South","S","On time","ontime"],
+    ["10:45","Hucknall","N","On time","ontime"],["10:48","Toton Lane","S","On time","ontime"]]},
+];
+const stationEl = document.getElementById("station"), rowsEl = document.getElementById("rows"), clockEl = document.getElementById("clock");
+let scene = 0, tz = SCENES[0].tz;
+
+function flapTo(el, text, cls) {
+  const target = text.toUpperCase();
+  el.className = cls || "";
+  el.innerHTML = "";
+  const spans = [...target].map(ch => { const s = document.createElement("span"); s.className = "flap"; s.textContent = " "; el.appendChild(s); return s; });
+  spans.forEach((s, i) => {
+    const settleAt = 4 + Math.floor(Math.random() * 8);
+    let n = 0;
+    s.classList.add("spin");
+    const iv = setInterval(() => {
+      n++;
+      if (n >= settleAt) { s.textContent = target[i]; s.classList.remove("spin"); clearInterval(iv); }
+      else s.textContent = FLAPCHARS[Math.floor(Math.random() * FLAPCHARS.length)];
+    }, 45 + i * 6);
+  });
+}
+function renderScene(idx) {
+  const sc = SCENES[idx]; tz = sc.tz;
+  flapTo(stationEl, sc.station);
+  rowsEl.innerHTML = '<tr class="cols"><td>TIME</td><td>DESTINATION</td><td>PLAT</td><td>EXPECTED</td></tr>';
+  sc.rows.forEach(r => {
+    const tr = document.createElement("tr");
+    const cells = [[r[0],""],[r[1],""],[r[2],""],[r[3],"st-"+r[4]]];
+    cells.forEach(([txt, cls]) => { const td = document.createElement("td"); tr.appendChild(td); flapTo(td, txt, cls); });
+    rowsEl.appendChild(tr);
+  });
+}
+renderScene(0);
+setInterval(() => { scene = (scene + 1) % SCENES.length; renderScene(scene); }, 9000);
+document.getElementById("board").addEventListener("click", () => { scene = (scene + 1) % SCENES.length; renderScene(scene); });
+const tick = () => clockEl.textContent = new Date().toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit", second:"2-digit", timeZone:tz});
+tick(); setInterval(tick, 1000);
+
+// ---------- 3D tilt on the board ----------
+const board = document.getElementById("board");
+const sceneWrap = document.querySelector(".board-scene");
+sceneWrap.addEventListener("mousemove", e => {
+  const r = board.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+  board.style.transform = `rotateY(${x * 10}deg) rotateX(${-y * 8}deg)`;
+});
+sceneWrap.addEventListener("mouseleave", () => board.style.transform = "rotateY(0deg) rotateX(0deg)");
+
+// ---------- three.js signal-lights background ----------
+if (window.THREE && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  const canvas = document.getElementById("bg");
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha:true, antialias:false });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const cam = new THREE.PerspectiveCamera(60, 1, 0.1, 100); cam.position.z = 12;
+  const world = new THREE.Scene();
+  const N = 260, pos = new Float32Array(N * 3), speed = [];
+  for (let i = 0; i < N; i++) { pos[i*3] = (Math.random()-.5)*40; pos[i*3+1] = (Math.random()-.5)*24; pos[i*3+2] = (Math.random()-.5)*14; speed.push(.002+Math.random()*.008); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  const dot = (color, size, opacity) => new THREE.Points(geo, new THREE.PointsMaterial({ color, size, transparent:true, opacity, blending:THREE.AdditiveBlending, depthWrite:false }));
+  world.add(dot(0xffb01f, .10, .8));
+  world.add(dot(0xffb01f, .3, .12)); // halo layer
+  let mx = 0, my = 0;
+  addEventListener("mousemove", e => { mx = e.clientX/innerWidth - .5; my = e.clientY/innerHeight - .5; });
+  const resize = () => { renderer.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth/innerHeight; cam.updateProjectionMatrix(); };
+  addEventListener("resize", resize); resize();
+  const p = geo.attributes.position.array;
+  (function loop(){
+    requestAnimationFrame(loop);
+    for (let i = 0; i < N; i++) { p[i*3] += speed[i]; if (p[i*3] > 20) p[i*3] = -20; } // drift right like passing trains
+    geo.attributes.position.needsUpdate = true;
+    cam.position.x += (mx*2 - cam.position.x) * .04;
+    cam.position.y += (-my*1.2 - cam.position.y) * .04;
+    cam.lookAt(0,0,0);
+    renderer.render(world, cam);
+  })();
+}
 </script>
 </body>
 </html>

@@ -34,7 +34,7 @@ targets:
         CFBundleDisplayName: Train Board
         CFBundleIconFile: AppIcon
         CFBundleIconName: AppIcon
-        CFBundleShortVersionString: "1.4"
+        CFBundleShortVersionString: "1.3.1"
         CFBundleVersion: "4"
         SUFeedURL: https://raw.githubusercontent.com/Joseph2475/train-board/main/appcast.xml
         SUPublicEDKey: HcbTYts2LdrZu7HlQdbWtWpHgYTomChnLnMBgHzbS0Q=
@@ -62,7 +62,7 @@ targets:
         CFBundleDisplayName: Train Board
         CFBundleIconFile: AppIcon
         CFBundleIconName: AppIcon
-        CFBundleShortVersionString: "1.4"
+        CFBundleShortVersionString: "1.3.1"
         CFBundleVersion: "4"
         CFBundlePackageType: XPC!
         NSExtension:

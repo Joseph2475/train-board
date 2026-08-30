@@ -3,13 +3,13 @@
   <channel>
     <title>TrainBoard</title>
     <item>
-      <title>1.4</title>
-      <pubDate>Sun, 30 Aug 2026 21:57:15 +0100</pubDate>
+      <title>1.3.1</title>
+      <pubDate>Sun, 30 Aug 2026 22:02:08 +0100</pubDate>
       <sparkle:version>4</sparkle:version>
-      <sparkle:shortVersionString>1.4</sparkle:shortVersionString>
+      <sparkle:shortVersionString>1.3.1</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
       <description><![CDATA[<p>TrainBoard now updates itself. Also new: a website at joseph2475.github.io/train-board.</p>]]></description>
-      <enclosure url="https://github.com/Joseph2475/train-board/releases/download/v1.4/TrainBoard.zip" length="7072495" type="application/octet-stream" sparkle:edSignature="5rcjPE5abTcoul703y2wLjdLnU+K7UilljoFg6XeB8frBp4233B75ejeGikrHaR9tS9bZC8ahT463GwThyImBg==" length="7072495" />
+      <enclosure url="https://github.com/Joseph2475/train-board/releases/download/v1.3.1/TrainBoard.zip" length="7072464" type="application/octet-stream" sparkle:edSignature="9mQGNoticBBR7APEU8vI6Q4P7PKy5xhiGy6y+mR6WFlbXyd/E4cyHcZ4lCotFGxEn5PEqTyK1iPk3mZKJuwQCg==" length="7072464" />
     </item>
   </channel>
 </rss>

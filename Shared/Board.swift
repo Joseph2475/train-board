@@ -214,18 +214,23 @@ private struct CrsResult: Decodable {
     let crsCode: String
 }
 
+private var cachedUKStations: [Station]?
+
 private func ukSearch(_ query: String) async throws -> [Station] {
     let trimmed = query.trimmingCharacters(in: .whitespaces)
-    guard !trimmed.isEmpty,
-          let encoded = trimmed.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
-    else { return [] }
-    let url = URL(string: "https://huxley2.azurewebsites.net/crs/\(encoded)")!
-    let (data, response) = try await URLSession.shared.data(from: url)
-    guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-        throw URLError(.badServerResponse)
+    guard !trimmed.isEmpty else { return [] }
+    if cachedUKStations == nil {
+        // bare /crs returns the full UK station list; cache once, filter locally (instant per keystroke)
+        let url = URL(string: "https://huxley2.azurewebsites.net/crs")!
+        let (data, response) = try await URLSession.shared.data(from: url)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
+        cachedUKStations = try JSONDecoder().decode([CrsResult].self, from: data)
+            .map { Station(code: $0.crsCode, name: $0.stationName) }
     }
-    return try JSONDecoder().decode([CrsResult].self, from: data)
-        .map { Station(code: $0.crsCode, name: $0.stationName) }
+    // normalize so "and" matches "&" (Cam & Dursley) and case never matters
+    func norm(_ s: String) -> String { s.lowercased().replacingOccurrences(of: "&", with: "and") }
+    let q = norm(trimmed)
+    return Array((cachedUKStations ?? []).filter { norm($0.name).contains(q) }.prefix(12))
 }
 
 // MARK: - Caltrain (511.org, free API key required)
